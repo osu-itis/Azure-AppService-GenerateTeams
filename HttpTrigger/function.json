@@ -6,7 +6,6 @@
       "direction": "in",
       "name": "Request",
       "methods": [
-        "get",
         "post"
       ]
     },
@@ -14,6 +13,13 @@
       "type": "http",
       "direction": "out",
       "name": "Response"
+    },
+    {
+      "name": "outputQueueItem",
+      "direction": "out",
+      "type": "queue",
+      "queueName": "new-teams-requests",
+      "connection": "teamsautocreate_STORAGE"
     }
   ]
 }

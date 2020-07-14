@@ -2,10 +2,17 @@
   "bindings": [
     {
       "name": "QueueItem",
-      "type": "queueTrigger",
+      "queueName": "new-teams-requests",
+      "connection": "teamsautocreate_STORAGE",
       "direction": "in",
-      "queueName": "js-queue-items",
-      "connection": "AzureWebJobsStorage"
+      "type": "queueTrigger"
+    },
+    {
+      "name": "LoggedTeamInstalls",
+      "tableName": "LoggedTeamInstalls",
+      "connection": "AzureWebJobsStorage",
+      "direction": "out",
+      "type": "table"
     }
   ]
 }
