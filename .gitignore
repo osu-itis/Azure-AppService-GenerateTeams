@@ -5,6 +5,10 @@ csx
 edge
 Publish
 
+*.xml
+/notes
+.vscode
+
 *.user
 *.suo
 *.cscfg
