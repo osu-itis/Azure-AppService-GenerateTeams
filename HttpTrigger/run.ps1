@@ -10,9 +10,7 @@ Write-Host "PowerShell HTTP trigger function processed a request."
 [hashtable]$Temp = $Request.body
 
 #Adding the callback id (which will be needed later)
-$Temp += @{
-    CallbackID = $(new-guid | Select-Object -ExpandProperty GUID)
-}
+$Temp = $Temp + @{CallbackID = $(new-guid | Select-Object -ExpandProperty GUID) }
 
 # Associate values to output bindings by calling 'Push-OutputBinding':
 
