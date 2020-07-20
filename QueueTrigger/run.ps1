@@ -10,9 +10,9 @@ Write-Host "PowerShell queue trigger function processed work item: $Queue"
 Write-Host "Queue item insertion time: $($TriggerMetadata.InsertionTime)"
 
 #Checking if the needed ENVs exist:
-if ([string]::IsNullOrEmpty($env:ClientID)) {Throw 'Could not find $env:ClientID'}
-if ([string]::IsNullOrEmpty($env:ClientSecret)) {Throw 'Could not find $env:ClientSecret'}
-if ([string]::IsNullOrEmpty($env:TenantId)) {Throw 'Could not find $env:TenantId'}
+if ([string]::IsNullOrEmpty($env:ClientID)) { Throw 'Could not find $env:ClientID' }
+if ([string]::IsNullOrEmpty($env:ClientSecret)) { Throw 'Could not find $env:ClientSecret' }
+if ([string]::IsNullOrEmpty($env:TenantId)) { Throw 'Could not find $env:TenantId' }
 
 $ClientInfo = [PSCustomObject]@{
     #This is the ClientID (Application ID) of registered AzureAD App
@@ -56,7 +56,7 @@ $ClientInfo.NewOAuthRequest()
 #Creating a new variable as our temp object (as a hash table)
 [pscustomobject]$TempObject = [pscustomobject]$Queue
 
-$TempObject|Add-Member -NotePropertyMembers @{
+$TempObject | Add-Member -NotePropertyMembers @{
     GroupResults = $null
     TeamResults  = $null
     Results      = $null
@@ -172,12 +172,12 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphTeamReque
 #Adding the script method to gather the results
 $TempObject | Add-Member -Force -MemberType ScriptMethod -Name GenerateResults -Value {
     $this.Results = [hashtable]@{
-        ID                = [string]$this.TeamResults.id
-        DisplayName       = [string]$this.TeamResults.displayName
-        Description       = [string]$this.TeamResults.description
+        ID          = [string]$this.TeamResults.id
+        DisplayName = [string]$this.TeamResults.displayName
+        Description = [string]$this.TeamResults.description
         #DiscoverySettings = [string]$this.TeamResults.discoverySettings #("showInTeamsSearchAndSuggestions": true) THIS DOES NOT APPEAR TO WORK FOR REPORTING????
-        Mail              = [string]$this.GroupResults.mail
-        Visibility        = [string]$this.GroupResults.visibility
+        Mail        = [string]$this.GroupResults.mail
+        Visibility  = [string]$this.GroupResults.visibility
     }
 }
 
@@ -200,13 +200,13 @@ $TempObject.GenerateResults()
 $TabbleLogging = [hashtable]@{
     partitionKey = 'TeamsLog'
     rowKey       = (new-guid).guid
-    TicketID = $($TempObject.TicketID)
-    Status = $(
+    TicketID     = $($TempObject.TicketID)
+    Status       = $(
         #Any needed tests to confirm that the team was successfully created
         switch ($TempObject) {
-            {[string]::isnullorempty($_.TeamResults)}{[string]"FAILED"}
-            {-not [string]::isnullorempty($_.TeamResults.ID)}{[string]"SUCCESS"}
-            Default {"UNKNOWN"}
+            { [string]::isnullorempty($_.TeamResults) } { [string]"FAILED" }
+            { -not [string]::isnullorempty($_.TeamResults.ID) } { [string]"SUCCESS" }
+            Default { "UNKNOWN" }
         }
     )
 }
@@ -215,10 +215,10 @@ $TabbleLogging = [hashtable]@{
 $Output = $TabbleLogging + $TempObject.Results
 
 #Adding any logging or error information needed
-$Output|Add-Member -NotePropertyMembers @{
+$Output | Add-Member -NotePropertyMembers @{
     ErrorCount = $error.Count
-    Errors = $(
-        if ($StartErrorCount -ne $error.Count){
+    Errors     = $(
+        if ($StartErrorCount -ne $error.Count) {
             $Error.Exception.Message
         }
     )
