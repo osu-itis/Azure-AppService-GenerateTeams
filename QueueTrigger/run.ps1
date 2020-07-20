@@ -21,7 +21,7 @@ $ClientInfo = [PSCustomObject]@{
     ClientSecret = $env:ClientSecret
     #This is your our Tenant ID
     TenantId     = $env:TenantId
-    #Leaving the headers blank for now, they'll be generated via a scriptmethod below    
+    #Leaving the headers blank for now, they'll be generated via a scriptmethod below
     Headers      = $null
     #Adding the token as a standalone variable (This can be used with invoke-restmethod after PS version 6.*)
     TokenString  = $null
@@ -45,7 +45,7 @@ $ClientInfo | Add-Member -MemberType ScriptMethod -Name NewOAuthRequest -Value {
     }
     #Creating the headers in for format of 'Bearer <TOKEN>', this will be needed for all future requests
     $this.Headers = @{
-        Authorization = "$($OAuthReq.token_type) $($OAuthReq.access_token))" 
+        Authorization = "$($OAuthReq.token_type) $($OAuthReq.access_token))"
     }
     $this.TokenString = $(ConvertTo-SecureString -String ($OAuthReq.access_token) -AsPlainText -Force)
 }
@@ -79,7 +79,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
                 [string]$this.TeamDescription
             }
             catch {
-                Write-Error -Message "Failed to identity the description" -ErrorAction Stop            
+                Write-Error -Message "Failed to identity the description" -ErrorAction Stop
             }
         )
         groupTypes           = @([string]"Unified")
@@ -89,7 +89,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
                 [string]$this.TeamName.Replace(" ", "")
             }
             catch {
-                Write-Error -Message "Failed to identity the Mail Nickname" -ErrorAction Stop                
+                Write-Error -Message "Failed to identity the Mail Nickname" -ErrorAction Stop
             }
         )
         securityEnabled      = [bool]$false
@@ -98,7 +98,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
                 $this.TeamType
             }
             catch {
-                Write-Error -Message "Failed to identity the Team type" -ErrorAction Stop                
+                Write-Error -Message "Failed to identity the Team type" -ErrorAction Stop
             }
         )
         "owners@odata.bind"  = [array]@(
@@ -107,7 +107,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
                     [string]"https://graph.microsoft.com/v1.0/users/$($this.TeamOwner)"
                 }
                 catch {
-                    Write-Error -Message "Failed to identity the Owner" -ErrorAction Stop                    
+                    Write-Error -Message "Failed to identity the Owner" -ErrorAction Stop
                 }
             )
         )
@@ -117,12 +117,12 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
                     [string]"https://graph.microsoft.com/v1.0/users/$($this.TeamOwner)"
                 }
                 catch {
-                    Write-Error -Message "Failed to identity the Owner" -ErrorAction Stop                    
+                    Write-Error -Message "Failed to identity the Owner" -ErrorAction Stop
                 }
             )
         )
     } | ConvertTo-Json
-    
+
     try {
         $this.GroupResults = $(
             Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/groups" -Authentication Bearer -Token $ClientInfo.TokenString -Method "Post" -ContentType "application/json" -Body $Body
@@ -154,7 +154,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphTeamReque
                 $this.TeamType
             }
             catch {
-                Write-Error -Message "Failed to identity the Team type" -ErrorAction Stop                
+                Write-Error -Message "Failed to identity the Team type" -ErrorAction Stop
             }
         )
     } | ConvertTo-Json
@@ -177,7 +177,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name GenerateResults -
         Description       = [string]$this.TeamResults.description
         #DiscoverySettings = [string]$this.TeamResults.discoverySettings #("showInTeamsSearchAndSuggestions": true) THIS DOES NOT APPEAR TO WORK FOR REPORTING????
         Mail              = [string]$this.GroupResults.mail
-        Visibility        = [string]$this.GroupResults.visibility        
+        Visibility        = [string]$this.GroupResults.visibility
     }
 }
 
@@ -197,8 +197,8 @@ Start-Sleep -Seconds 15
 $TempObject.GenerateResults()
 
 #Creating the table logging (needed table attributes)
-$TabbleLogging = [hashtable]@{  
-    partitionKey = 'TeamsLog'  
+$TabbleLogging = [hashtable]@{
+    partitionKey = 'TeamsLog'
     rowKey       = (new-guid).guid
     TicketID = $($TempObject.TicketID)
     Status = $(
