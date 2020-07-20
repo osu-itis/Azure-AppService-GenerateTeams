@@ -6,7 +6,7 @@ $StartErrorCount = [int]$(
 )
 
 # Write out the queue message and insertion time to the information log.
-Write-Host "PowerShell queue trigger function processed work item: $Queue"
+Write-Host "PowerShell queue trigger function processed work item: $($Queue |convertto-json )"
 Write-Host "Queue item insertion time: $($TriggerMetadata.InsertionTime)"
 
 #Checking if the needed ENVs exist:
