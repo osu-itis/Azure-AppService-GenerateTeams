@@ -178,6 +178,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name GenerateResults -
         #DiscoverySettings = [string]$this.TeamResults.discoverySettings #("showInTeamsSearchAndSuggestions": true) THIS DOES NOT APPEAR TO WORK FOR REPORTING????
         Mail        = [string]$this.GroupResults.mail
         Visibility  = [string]$this.GroupResults.visibility
+        CallbackID  = [string]$this.CallbackID
     }
 }
 
@@ -225,6 +226,7 @@ $Output | Add-Member -NotePropertyMembers @{
 }
 
 #Converting to Json and pushing out to the host for humans to read
+Write-Host -message "Final Output:"
 Write-Host -message $($Output | convertto-json)
 
 #EXPORTING OUT A CLIXML FILE FOR TESTING
