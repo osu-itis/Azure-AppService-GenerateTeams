@@ -200,7 +200,7 @@ $TempObject.GenerateResults()
 #Creating the table logging (needed table attributes)
 $TabbleLogging = [hashtable]@{
     partitionKey = 'TeamsLog'
-    rowKey       = (new-guid).guid
+    rowKey       = $($TempObject.CallbackID)
     TicketID     = $($TempObject.TicketID)
     Status       = $(
         #Any needed tests to confirm that the team was successfully created
