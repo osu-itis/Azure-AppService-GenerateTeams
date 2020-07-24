@@ -1,0 +1,18 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "powershell",
+    "AzureWebJobsStorage": "",
+    "teamsautocreate_STORAGE": "",
+    "ServiceAccountUsername": "",
+    "ServiceAccountPassword": "",
+    "ClientID": "",
+    "ClientSecret": "",
+    "TenantID": "",
+    "ServicePrincipalID": "",
+    "ServicePrincipalKey": "",
+    "AppRegistrationID": "",
+    "AppRegistrationSecret": ""
+  },
+  "ConnectionStrings": {}
+}
