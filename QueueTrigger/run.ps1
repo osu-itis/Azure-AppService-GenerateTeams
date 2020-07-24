@@ -76,7 +76,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         )
         Description          = $(
             try {
-                [string]$this.TeamDescription
+                [string]$this.Description.trim()
             }
             catch {
                 Write-Error -Message "Failed to identity the description" -ErrorAction Stop
@@ -95,7 +95,12 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         securityEnabled      = [bool]$false
         Visibility           = $(
             try {
-                $this.TeamType
+                #$this.TeamType
+                switch ($this.TeamType) {
+                    {$_ -like "Private+Team"} {"Private"}
+                    {$_ -like "Public+Team"} {"Public"}
+                    Default {"Private"}
+                }
             }
             catch {
                 Write-Error -Message "Failed to identity the Team type" -ErrorAction Stop
@@ -104,7 +109,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         "owners@odata.bind"  = [array]@(
             $(
                 try {
-                    [string]"https://graph.microsoft.com/v1.0/users/$($this.TeamOwner)"
+                    [string]"https://graph.microsoft.com/v1.0/users/$($this.TeamOwner.replace("%40","@"))"
                 }
                 catch {
                     Write-Error -Message "Failed to identity the Owner" -ErrorAction Stop
@@ -114,7 +119,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         "Members@odata.bind" = [array]@(
             $(
                 try {
-                    [string]"https://graph.microsoft.com/v1.0/users/$($this.TeamOwner)"
+                    [string]"https://graph.microsoft.com/v1.0/users/$($this.TeamOwner.replace("%40","@"))"
                 }
                 catch {
                     Write-Error -Message "Failed to identity the Owner" -ErrorAction Stop
@@ -151,7 +156,12 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphTeamReque
         }
         Visibility        = $(
             try {
-                $this.TeamType
+                #$this.TeamType
+                switch ($this.TeamType) {
+                    {$_ -like "Private+Team"} {"Private"}
+                    {$_ -like "Public+Team"} {"Public"}
+                    Default {"Private"}
+                }
             }
             catch {
                 Write-Error -Message "Failed to identity the Team type" -ErrorAction Stop
