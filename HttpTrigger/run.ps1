@@ -20,5 +20,5 @@ Push-OutputBinding -Name "outputQueueItem" -Value $($temp | convertto-Json)
 ## Sending the information back in the response 
 Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
         StatusCode = [HttpStatusCode]::OK
-        Body       = $($Temp | convertto-Json)
+        Body       = $(@{CallbackID = $Temp.CallbackID } | ConvertTo-Json)
     })
