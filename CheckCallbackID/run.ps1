@@ -52,15 +52,12 @@ $Settings = [pscustomobject]@{
     ServicePrincipalKey = $env:AppRegistrationSecret
 }
 
-#Gathering the Client ID from the query or body of the request
-$CallbackID = $Request.query
-if (-not $CallbackID) {
-    $CallbackID = $Request.Body
-}
+#Gathering the Client ID from the query of the request, converted from Json
+$CallbackID = $Request.Query.CallbackID|ConvertFrom-Json|Select-Object -ExpandProperty CallbackID
 
 #Generating the table entry to query
 $TableEntry = @{
-    RowKey = $([pscustomobject]$CallbackID.CallbackID.tostring())
+    RowKey = $($CallbackID)
     PartitionKey = $Settings.PartitionKey
 }
 
@@ -88,7 +85,7 @@ if ($Results) {
 }
 else {
     $status = [HttpStatusCode]::BadRequest
-    $body = "$([pscustomobject]$CallbackID.CallbackID.tostring()) was not found"
+    $body = "$CallbackID was not found"
 }
 
 # Associate values to output bindings by calling 'Push-OutputBinding'.
