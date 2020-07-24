@@ -3,14 +3,14 @@
     {
       "name": "Queue",
       "queueName": "new-teams-requests",
-      "connection": "teamsautocreate_STORAGE",
+      "connection": "AzureWebJobsStorage",
       "direction": "in",
       "type": "queueTrigger"
     },
     {
       "name": "LoggedTeamInstalls",
       "tableName": "LoggedTeamInstalls",
-      "connection": "teamsautocreate_STORAGE",
+      "connection": "AzureWebJobsStorage",
       "direction": "out",
       "type": "table"
     }

@@ -19,7 +19,7 @@
       "direction": "out",
       "type": "queue",
       "queueName": "new-teams-requests",
-      "connection": "teamsautocreate_STORAGE"
+      "connection": "AzureWebJobsStorage"
     }
   ]
 }
