@@ -53,14 +53,14 @@ $Settings = [pscustomobject]@{
 }
 
 #Gathering the Client ID from the query or body of the request
-$clientID = $Request.query
-if (-not $clientID) {
-    $clientID = $Request.Body
+$CallbackID = $Request.query
+if (-not $CallbackID) {
+    $CallbackID = $Request.Body
 }
 
 #Generating the table entry to query
 $TableEntry = @{
-    RowKey = $([pscustomobject]$ClientID.ClientID.tostring())
+    RowKey = $([pscustomobject]$CallbackID.CallbackID.tostring())
     PartitionKey = $Settings.PartitionKey
 }
 
@@ -88,7 +88,7 @@ if ($Results) {
 }
 else {
     $status = [HttpStatusCode]::BadRequest
-    $body = "$([pscustomobject]$ClientID.ClientID.tostring()) was not found"
+    $body = "$([pscustomobject]$CallbackID.CallbackID.tostring()) was not found"
 }
 
 # Associate values to output bindings by calling 'Push-OutputBinding'.
