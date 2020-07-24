@@ -56,12 +56,6 @@ $Settings = [pscustomobject]@{
 #Gathering the Client ID from the query of the request, converted from Json
 $CallbackID = $Request.Query.CallbackID|ConvertFrom-Json|Select-Object -ExpandProperty CallbackID
 
-#Generating the table entry to query
-$TableEntry = @{
-    RowKey = $($CallbackID)
-    PartitionKey = $Settings.PartitionKey
-}
-
 #Gather the AZ Storage Context which provides information about the account to be used
 $StorageAccount = [pscustomobject]@{
     CTX = New-AzStorageContext -StorageAccountName $Settings.StorageAccount.Name -StorageAccountKey $Settings.StorageAccount.Key
@@ -76,8 +70,15 @@ $ServicePrincipalAccount = New-Object System.Management.Automation.PSCredential 
 #Connecting to an AD service account (which auto-loads the "AzStorageTable" cmdlets, this is required to use this commands)
 Connect-AzAccount -Tenant $Settings.TenantID -Credential $ServicePrincipalAccount -ServicePrincipal
 
+#Generating the table entry to query
+$TableEntryQuery = @{
+    RowKey = $($CallbackID.trim())
+    PartitionKey = $Settings.PartitionKey
+    Table = $AzureStorageTable.CloudTable
+}
+
 #Gathering the AZ table row info (using information about the table to gather the correct entry)
-$Results = Get-AzTableRow @TableEntry -Table $AzureStorageTable.CloudTable
+$Results = Get-AzTableRow @TableEntryQuery
 
 #Testing for the client id
 if ($Results) {
