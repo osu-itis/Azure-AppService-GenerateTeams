@@ -178,7 +178,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name GenerateResults -
         #DiscoverySettings = [string]$this.TeamResults.discoverySettings #("showInTeamsSearchAndSuggestions": true) THIS DOES NOT APPEAR TO WORK FOR REPORTING????
         Mail        = [string]$this.GroupResults.mail
         Visibility  = [string]$this.GroupResults.visibility
-        CallbackID  = [string]$this.CallbackID
+        #CallbackID  = [string]$this.CallbackID
     }
 }
 
