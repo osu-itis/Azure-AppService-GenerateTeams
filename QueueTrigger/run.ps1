@@ -97,9 +97,9 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
             try {
                 #$this.TeamType
                 switch ($this.TeamType) {
-                    {$_ -like "Private+Team"} {"Private"}
-                    {$_ -like "Public+Team"} {"Public"}
-                    Default {"Private"}
+                    { $_ -like "Private+Team" } { "Private" }
+                    { $_ -like "Public+Team" } { "Public" }
+                    Default { "Private" }
                 }
             }
             catch {
@@ -158,9 +158,9 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphTeamReque
             try {
                 #$this.TeamType
                 switch ($this.TeamType) {
-                    {$_ -like "Private+Team"} {"Private"}
-                    {$_ -like "Public+Team"} {"Public"}
-                    Default {"Private"}
+                    { $_ -like "Private+Team" } { "Private" }
+                    { $_ -like "Public+Team" } { "Public" }
+                    Default { "Private" }
                 }
             }
             catch {

@@ -15,32 +15,32 @@ if ([string]::IsNullOrEmpty($env:AppRegistrationSecret)) { Throw 'Could not find
 $Settings = [pscustomobject]@{
 
     #Getting the Tenant ID
-    TenantID =  $env:TenantId
+    TenantID              = $env:TenantId
 
     #The partition key of the azure storage table thats in use
-    PartitionKey = "TeamsLog"
+    PartitionKey          = "TeamsLog"
 
     #Azure Storage Table
     AzureStorageTableName = "LoggedTeamInstalls"
 
     #StorageAccount Credentials
-    StorageAccount = $(
+    StorageAccount        = $(
         #Building an empty hash
         $StorageAccount = @{}
         #Using a switch to pull the name and key out of the azurewebjobsstorage env
         switch (
             $($env:AzureWebJobsStorage.split(";"))
         ) {
-            {$_ -like "AccountName=*"}{
+            { $_ -like "AccountName=*" } {
                 $StorageAccount += @{
-                    Name = $($_.replace("AccountName=",""))
-        
+                    Name = $($_.replace("AccountName=", ""))
+
                 }
             }
-            {$_ -like "AccountKey=*"}{
+            { $_ -like "AccountKey=*" } {
                 $StorageAccount += @{
-                    Key = $($_.replace("AccountKey=",""))
-        
+                    Key = $($_.replace("AccountKey=", ""))
+
                 }
             }
         }
@@ -49,12 +49,12 @@ $Settings = [pscustomobject]@{
     )
 
     #Service Principal
-    ServicePrincipalID = $env:AppRegistrationID
-    ServicePrincipalKey = $env:AppRegistrationSecret
+    ServicePrincipalID    = $env:AppRegistrationID
+    ServicePrincipalKey   = $env:AppRegistrationSecret
 }
 
 #Gathering the Client ID from the query of the request, converted from Json
-$CallbackID = $Request.Query.CallbackID|ConvertFrom-Json|Select-Object -ExpandProperty CallbackID
+$CallbackID = $Request.Query.CallbackID | ConvertFrom-Json | Select-Object -ExpandProperty CallbackID
 
 #Gather the AZ Storage Context which provides information about the account to be used
 $StorageAccount = [pscustomobject]@{
@@ -72,9 +72,9 @@ Connect-AzAccount -Tenant $Settings.TenantID -Credential $ServicePrincipalAccoun
 
 #Generating the table entry to query
 $TableEntryQuery = @{
-    RowKey = $($CallbackID.trim())
+    RowKey       = $($CallbackID.trim())
     PartitionKey = $Settings.PartitionKey
-    Table = $AzureStorageTable.CloudTable
+    Table        = $AzureStorageTable.CloudTable
 }
 
 #Gathering the AZ table row info (using information about the table to gather the correct entry)
@@ -91,7 +91,9 @@ else {
 }
 
 # Associate values to output bindings by calling 'Push-OutputBinding'.
-Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
-    StatusCode = $status
-    Body = $body
-})
+Push-OutputBinding -Name Response -Value (
+    [HttpResponseContext]@{
+        StatusCode = $status
+        Body       = $body
+    }
+)
