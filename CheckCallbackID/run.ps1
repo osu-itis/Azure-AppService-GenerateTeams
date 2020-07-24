@@ -7,9 +7,10 @@ param($Request, $TriggerMetadata)
 Write-Host "PowerShell HTTP trigger function processed a request."
 
 #Checking if the needed ENVs exist:
-# if ([string]::IsNullOrEmpty($env:ClientID)) { Throw 'Could not find $env:ClientID' }
-# if ([string]::IsNullOrEmpty($env:ClientSecret)) { Throw 'Could not find $env:ClientSecret' }
-# if ([string]::IsNullOrEmpty($env:TenantId)) { Throw 'Could not find $env:TenantId' }
+if ([string]::IsNullOrEmpty($env:TenantId)) { Throw 'Could not find $env:TenantId' }
+if ([string]::IsNullOrEmpty($env:AzureWebJobsStorage)) { Throw 'Could not find $env:AzureWebJobsStorage' }
+if ([string]::IsNullOrEmpty($env:AppRegistrationID)) { Throw 'Could not find $env:AppRegistrationID' }
+if ([string]::IsNullOrEmpty($env:AppRegistrationSecret)) { Throw 'Could not find $env:AppRegistrationSecret' }
 
 $Settings = [pscustomobject]@{
 
