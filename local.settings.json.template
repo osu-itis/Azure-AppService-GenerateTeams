@@ -5,7 +5,7 @@
     "AzureWebJobsStorage": "",
     "ClientID": "",
     "ClientSecret": "",
-    "TenantID": "",
+    "TenantID": ""
   },
   "ConnectionStrings": {}
 }
