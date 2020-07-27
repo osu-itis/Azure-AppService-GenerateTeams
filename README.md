@@ -12,17 +12,26 @@ This repository contains the code used for azure functions allowing a single Res
 - Azure App Registration
   - Application (client) ID
   - Client Secret
+  - Graph Permissions:
+    | Graph API Permission       | Type        | Description                         | Admin Consent Required |
+    | -------------------------- | ----------- | ----------------------------------- | ---------------------- |
+    | Directory.ReadWrite.All    | Application | Read and write directory data       | Yes                    |
+    | Group.ReadWrite.All        | Application | Read and write all groups           | Yes                    |
+    | Team.Create                | Application | Create teams                        | Yes                    |
+    | Team.ReadBasic.All         | Application | Get a list of all teams             | Yes                    |
+    | TeamSettings.ReadWrite.All | Application | Read and change all teams' settings | Yes                    |
 - Azure Resource Group
   - Technically optional, used to store and organize all of these resources mentioned.
+- Azure App Service
 - Azure Storage Account
-  - >NOTE: Account name and key are not directly used in this script, instead the `function.json` files use the default "AzureWebJobsStorage" connection which provides this information to the functions.
   - Azure Storage Queue
   - Azure Storage Table
-- Azure App Service
+  - >NOTE: Account name and key are not directly used in this script, instead the `function.json` files use the default "AzureWebJobsStorage" connection which provides this information to the functions.
 
 ## Setup
 
 - Generate the Azure App Registration
+  - Set the proper Graph permissions (listed in the requirement section)
   - Make note of the Application (client) ID
     - Generate a new client secret (description does not matter)
     - > NOTE: Make note of the new client secret, you will not be able to view it later, if lost, a new client secret needs to be generated
@@ -32,7 +41,7 @@ This repository contains the code used for azure functions allowing a single Res
   - Create a new Azure Storage Queue and Table
     - Make note of both the Queue and Table name, they will be needed later
 - Create a new App Service
-  - The code from this Repo can be cloned down or SFTP transfered to the app service and then configured.
+  - The code from this Repo can be cloned down from git or use an SFTP transfer to the app service.
   - >NOTE: Review the `local.settings.json.template` "values" section for a list of attributes that will need to exist in the "application settings and configuration" in the app service (set these using the Azure Portal GUI).
 - Review the hardcoded values section below and ensure that those entries are updated to match the current Azure storage.
 
