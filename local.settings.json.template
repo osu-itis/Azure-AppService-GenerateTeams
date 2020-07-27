@@ -6,8 +6,6 @@
     "ClientID": "",
     "ClientSecret": "",
     "TenantID": "",
-    "ServicePrincipalID": "",
-    "ServicePrincipalKey": "",
     "AppRegistrationID": "",
     "AppRegistrationSecret": ""
   },
