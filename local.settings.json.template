@@ -6,8 +6,6 @@
     "ClientID": "",
     "ClientSecret": "",
     "TenantID": "",
-    "AppRegistrationID": "",
-    "AppRegistrationSecret": ""
   },
   "ConnectionStrings": {}
 }
