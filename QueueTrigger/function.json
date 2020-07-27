@@ -8,8 +8,8 @@
       "type": "queueTrigger"
     },
     {
-      "name": "LoggedTeamInstalls",
-      "tableName": "LoggedTeamInstalls",
+      "name": "LoggedTeamsRequests",
+      "tableName": "LoggedTeamsRequests",
       "connection": "AzureWebJobsStorage",
       "direction": "out",
       "type": "table"

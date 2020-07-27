@@ -21,7 +21,7 @@ $Settings = [pscustomobject]@{
     PartitionKey          = "TeamsLog"
 
     #Azure Storage Table
-    AzureStorageTableName = "LoggedTeamInstalls"
+    AzureStorageTableName = "LoggedTeamsRequests"
 
     #StorageAccount Credentials
     StorageAccount        = $(

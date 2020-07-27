@@ -238,4 +238,4 @@ Write-Host -message "Final Output:"
 Write-Host -message $($Output | convertto-json)
 
 #Writing to the table (for logging purposes)
-Push-OutputBinding -Name LoggedTeamInstalls -Value $Output
+Push-OutputBinding -Name LoggedTeamsRequests -Value $Output
