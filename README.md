@@ -47,7 +47,7 @@ This repository contains the code used for azure functions allowing a single Res
 
 ### Hardcoded Values
 
-There are a few hardcoded values set that are based on the configuration of the Azure Storage:
+There are a few hardcoded values that need to be set that are based on the configuration of the Azure Storage:
 
 - `CheckCallbackID\run.ps1`
   - PartitionKey
