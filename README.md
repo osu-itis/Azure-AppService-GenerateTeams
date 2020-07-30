@@ -7,6 +7,15 @@ Total Rest Options: Post,Get
 
 This repository contains the code used for azure functions allowing a single Rest Post request to generate a new Microsoft Teams team based off of the information provided. This was originally created for use with TDx Web Request features to automate our workflows when creating Microsoft Teams
 
+## Table Of Contents
+
+- [Generate Teams](#generate-teams)
+  - [Table Of Contents](#table-of-contents)
+  - [Requirements](#requirements)
+  - [Setup](#setup)
+    - [Hardcoded Values](#hardcoded-values)
+  - [Workflow and Usage](#workflow-and-usage)
+
 ## Requirements
 
 - Azure App Registration
