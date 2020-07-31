@@ -81,13 +81,23 @@ $TableEntryQuery = @{
 $Results = Get-AzTableRow @TableEntryQuery
 
 #Testing for the client id
-if ($Results) {
-    $status = [HttpStatusCode]::OK
-    $body = $Results
-}
-else {
-    $status = [HttpStatusCode]::BadRequest
-    $body = "$CallbackID was not found"
+switch ($Results) {
+    #If the result status is success:
+    {$_.status -eq "SUCCESS"} {
+        $status = [HttpStatusCode]::OK
+        $body = $Results
+    }
+    #If the result status is failed:
+    {$_.status -eq "FAILED"} {
+        $status = [HttpStatusCode]::BadRequest
+        #Note that we are still returning the results, but it also returns a bad request status (which can be used to automate workflows based on the response)
+        $body = $Results
+    }
+    #If there is no status or the $Results attribute does not even exist:
+    Default {
+        $status = [HttpStatusCode]::BadRequest
+        $body = "$CallbackID was not found"
+    }
 }
 
 # Associate values to output bindings by calling 'Push-OutputBinding'.
