@@ -13,7 +13,11 @@ This repository contains the code used for azure functions allowing a single Res
   - [Table Of Contents](#table-of-contents)
   - [Requirements](#requirements)
   - [Setup](#setup)
-    - [Hardcoded Values](#hardcoded-values)
+    - [Hardcoded Script Values](#hardcoded-script-values)
+    - [TDx configuration](#tdx-configuration)
+      - [TDx User account permission](#tdx-user-account-permission)
+      - [Web Service Auth Account](#web-service-auth-account)
+      - [Web Service Provider](#web-service-provider)
   - [Workflow and Usage](#workflow-and-usage)
 
 ## Requirements
@@ -54,7 +58,7 @@ This repository contains the code used for azure functions allowing a single Res
   - >NOTE: Review the `local.settings.json.template` "values" section for a list of attributes that will need to exist in the "application settings and configuration" in the app service (set these using the Azure Portal GUI).
 - Review the hardcoded values section below and ensure that those entries are updated to match the current Azure storage.
 
-### Hardcoded Values
+### Hardcoded Script Values
 
 There are a few hardcoded values that need to be set that are based on the configuration of the Azure Storage:
 
@@ -62,10 +66,34 @@ There are a few hardcoded values that need to be set that are based on the confi
   - PartitionKey
   - AzureStorageTableName
 - `HttpTrigger\function.json`
-  - queuename
+  - QueueName
 - `QueueTrigger\function.json`
-  - tablename
-  - queuename
+  - TableName
+  - QueueName
+
+### TDx configuration
+
+#### TDx User account permission
+
+  | Application   | Security Role                                      |
+  | ------------- | -------------------------------------------------- |
+  | Chat          | ✔                                                  |
+  | Client Portal | Client + Knowledge Base, Services, Ticket Requests |
+  | Community     | ✔                                                  |
+  | IT            | Technician                                         |
+  | TDNext        | ✔                                                  |
+
+#### Web Service Auth Account
+
+  | Name                       | type                | active |
+  | -------------------------- | ------------------- | ------ |
+  | Existing user account Name | TeamDynamix Web API | ✔      |
+
+#### Web Service Provider
+
+  | Name                | Base Service Provider URL                   | Active |
+  | ------------------- | ------------------------------------------- | ------ |
+  | Azure Teams Creator | [https://AzureAppName.azurewebsites.net/api/](https://AzureAppName.azurewebsites.net/api/) | ✔      |
 
 ## Workflow and Usage
 
