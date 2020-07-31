@@ -109,7 +109,11 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         "owners@odata.bind"  = [array]@(
             $(
                 try {
-                    [string]"https://graph.microsoft.com/v1.0/users/$($this.TeamOwner.replace("%40","@"))"
+                    #Replacing any formatting issues and then splitting the string into multiple objects (if applicable)
+                    $TempSplit = $this.TeamOwner.replace("%40","@").Replace("+","").split(",")
+                    foreach ($item in $TempSplit) {
+                        [string]"https://graph.microsoft.com/v1.0/users/$item"
+                    }
                 }
                 catch {
                     Write-Error -Message "Failed to identity the Owner" -ErrorAction Stop
@@ -119,7 +123,11 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         "Members@odata.bind" = [array]@(
             $(
                 try {
-                    [string]"https://graph.microsoft.com/v1.0/users/$($this.TeamOwner.replace("%40","@"))"
+                    #Replacing any formatting issues and then splitting the string into multiple objects (if applicable)
+                    $TempSplit = $this.TeamOwner.replace("%40","@").Replace("+","").split(",")
+                    foreach ($item in $TempSplit) {
+                        [string]"https://graph.microsoft.com/v1.0/users/$item"
+                    }
                 }
                 catch {
                     Write-Error -Message "Failed to identity the Owner" -ErrorAction Stop
