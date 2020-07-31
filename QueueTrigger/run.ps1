@@ -110,7 +110,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
             $(
                 try {
                     #Replacing any formatting issues and then splitting the string into multiple objects (if applicable)
-                    $TempSplit = $this.TeamOwner.replace("%40","@").Replace("+","").split(",")
+                    $TempSplit = $this.TeamOwner.replace("%40","@").Replace("+","").split(",").split(";").split(":")
                     foreach ($item in $TempSplit) {
                         [string]"https://graph.microsoft.com/v1.0/users/$item"
                     }
@@ -124,7 +124,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
             $(
                 try {
                     #Replacing any formatting issues and then splitting the string into multiple objects (if applicable)
-                    $TempSplit = $this.TeamOwner.replace("%40","@").Replace("+","").split(",")
+                    $TempSplit = $this.TeamOwner.replace("%40","@").Replace("+","").split(",").split(";").split(":")
                     foreach ($item in $TempSplit) {
                         [string]"https://graph.microsoft.com/v1.0/users/$item"
                     }
