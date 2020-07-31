@@ -68,7 +68,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
     $Body = @{
         DisplayName          = $(
             try {
-                [string]$this.TeamName
+                [string]$this.TeamName.replace("+", " ").trim()
             }
             catch {
                 Write-Error -Message "Failed to identity the display name" -ErrorAction Stop
