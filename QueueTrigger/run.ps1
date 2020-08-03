@@ -70,7 +70,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
     $params = @{
         #This formatting is intentional, the $filter needs to be single quoted due to the dollarsign, the single quotes need to be double quoted and the variables should not be single quoted so they are evaluated properly
         #Example of the output: https://graph.microsoft.com/v1.0/users/?$filter=mail eq 'email.address@oregonstate.edu' or userprincipalname eq 'email.address@oregonstate.edu'
-        Uri            = "https://graph.microsoft.com/v1.0/users/" + '?$filter=mail eq' + " '" + $($this.TeamOwner.replace("%40", "@")) + "' " + 'or userprincipalname eq' + " '" + $($this.TeamOwner.replace("%40", "@")) + "' "
+        Uri            = "https://graph.microsoft.com/v1.0/users/" + '?$filter=mail eq' + " '" + $($this.Requestor.replace("%40", "@")) + "' " + 'or userprincipalname eq' + " '" + $($this.Requestor.replace("%40", "@")) + "' "
         Authentication = "Bearer"
         Token          = $ClientInfo.TokenString
         Method         = "Get"
