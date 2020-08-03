@@ -90,7 +90,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         )
         Description          = $(
             try {
-                [string]$this.TeamDescription.replace("+", " ").trim()
+                [string]$this.TeamDescription.replace("+", " ").replace("%2","/").trim()
             }
             catch {
                 Write-Error -Message "Failed to identity the description" -ErrorAction Stop
@@ -99,8 +99,14 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         groupTypes           = @([string]"Unified")
         MailEnabled          = [bool]$true
         MailNickname         = $(
+            #Testing if the name of the team (not counting spaces) is less than 8 characters, if so, add "TeamGroup" onto the mail nickname to ensure that the number of characters is over 8.
             try {
-                [string]$this.TeamName.Replace(" ", "")
+                if (([string]$this.TeamName.Replace(" ", "") | Measure-Object -Character).Characters -lt 8) {
+                    [string]$this.TeamName.Replace(" ", "") + "+TeamGroup"
+                }
+                else {
+                    [string]$this.TeamName.Replace(" ", "")
+                }
             }
             catch {
                 Write-Error -Message "Failed to identity the Mail Nickname" -ErrorAction Stop
