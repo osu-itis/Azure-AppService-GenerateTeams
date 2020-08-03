@@ -90,7 +90,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         )
         Description          = $(
             try {
-                [string]$this.TeamDescription.replace("+", " ").trim()
+                [string]$this.TeamDescription.replace("+", " ").replace("%2","/").trim()
             }
             catch {
                 Write-Error -Message "Failed to identity the description" -ErrorAction Stop
