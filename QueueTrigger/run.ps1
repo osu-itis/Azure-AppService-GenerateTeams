@@ -64,6 +64,20 @@ $TempObject | Add-Member -NotePropertyMembers @{
 
 #Adding the script method for the a group request
 $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequest -Value {
+        
+    #Get the Owner ID based on the email address that was provided
+    #Generating the params that are needed for the query
+    $params = @{
+        #This formatting is intentional, the $filter needs to be single quoted due to the dollarsign, the single quotes need to be double quoted and the variables should not be single quoted so they are evaluated properly
+        #Example of the output: https://graph.microsoft.com/v1.0/users/?$filter=mail eq 'email.address@oregonstate.edu' or userprincipalname eq 'email.address@oregonstate.edu'
+        Uri            = "https://graph.microsoft.com/v1.0/users/" + '?$filter=mail eq' + " '" + $($this.Requestor.replace("%40", "@")) + "' " + 'or userprincipalname eq' + " '" + $($this.Requestor.replace("%40", "@")) + "' "
+        Authentication = "Bearer"
+        Token          = $ClientInfo.TokenString
+        Method         = "Get"
+    }
+    #Making the graph query and setting a variable with the ID that was returned in the response
+    $Owner = (Invoke-RestMethod @params).value.id
+    
     #setting the needed body parameters & converting to JSON format
     $Body = @{
         DisplayName          = $(
@@ -109,7 +123,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         "owners@odata.bind"  = [array]@(
             $(
                 try {
-                    [string]"https://graph.microsoft.com/v1.0/users/$($this.TeamOwner.replace("%40","@"))"
+                    [string]"https://graph.microsoft.com/v1.0/users/$Owner"
                 }
                 catch {
                     Write-Error -Message "Failed to identity the Owner" -ErrorAction Stop
@@ -119,7 +133,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         "Members@odata.bind" = [array]@(
             $(
                 try {
-                    [string]"https://graph.microsoft.com/v1.0/users/$($this.TeamOwner.replace("%40","@"))"
+                    [string]"https://graph.microsoft.com/v1.0/users/$Owner"
                 }
                 catch {
                     Write-Error -Message "Failed to identity the Owner" -ErrorAction Stop
