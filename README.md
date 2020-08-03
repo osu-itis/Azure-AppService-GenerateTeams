@@ -19,6 +19,11 @@ This repository contains the code used for azure functions allowing a single Res
       - [Web Service Auth Account](#web-service-auth-account)
       - [Web Service Provider](#web-service-provider)
   - [Workflow and Usage](#workflow-and-usage)
+  - [REST Examples](#rest-examples)
+    - [Example Hostnames](#example-hostnames)
+    - [Request to generate a new team](#request-to-generate-a-new-team)
+    - [Example REST request to trigger the Queue](#example-rest-request-to-trigger-the-queue)
+    - [Callback to check the status of the newly created team](#callback-to-check-the-status-of-the-newly-created-team)
 
 ## Requirements
 
@@ -91,13 +96,12 @@ There are a few hardcoded values that need to be set that are based on the confi
 
 #### Web Service Provider
 
-  | Name                | Base Service Provider URL                   | Active |
-  | ------------------- | ------------------------------------------- | ------ |
+  | Name                | Base Service Provider URL                                                                  | Active |
+  | ------------------- | ------------------------------------------------------------------------------------------ | ------ |
   | Azure Teams Creator | [https://AzureAppName.azurewebsites.net/api/](https://AzureAppName.azurewebsites.net/api/) | ✔      |
 
 ## Workflow and Usage
 
-- >NOTE: Review the `sample.dat` files for a REST example of how to trigger the respective function.
 - `HTTPTrigger` function is triggered via a post request.
   - This returns a "CallbackID" which can later be used to query the status of the team.
   - The request is then stored within an azure storage queue.
@@ -108,3 +112,60 @@ There are a few hardcoded values that need to be set that are based on the confi
   - The queue trigger takes a mixture of the Group and Team attributes and posts the results to an azure table (this is both used for checking the status of the new team and as long term storage logs for the requests).
 A new Rest Get request is made (on demand by an application, like TDx) to the `CheckCallbackID` Function, this function takes the provided callback ID and checks the Azure storage table, Returning a 400 response if not found, and a 200 response with the team information if found. This status can be used in TDx to automatically move through a predefined workflow.
 - Shortly after the new team is created, the owner (and one and only member) will be granted access to the team and receive a notification if the teams client is running.
+
+## REST Examples
+
+### Example Hostnames
+
+```text
+The name is based off of whatever the Azure Function App Service name is:
+  Host: https://<FUNCTIONAPPNAME>.azurewebsites.net
+
+Port 7071 is currently the default port when using the local azure function apps for testing:
+  Host: localhost:7071
+
+```
+
+### Request to generate a new team
+
+```HTTP REST
+POST /api/HttpTrigger?code=<AZUREFUNCTIONKEY> HTTP/1.1
+Host: <HOST>
+Content-Type: application/json
+
+{
+  "TeamDescription": "Generated through API call",
+  "TeamType": "Private+Team",
+  "TeamName": "Some Name",
+  "TicketID": "00000000",
+  "Requestor": "email.address@oregonstate.edu"
+}
+```
+
+### Example REST request to trigger the Queue
+
+>NOTE: This does not normally need to be done, often its better to trigger the generation of a new team which will in turn trigger this.
+
+```HTTP REST
+POST /admin/functions/QueueTrigger HTTP/1.1
+Host: <HOST>
+Content-Type: application/json
+
+{
+  "Description": "Generated through Queue trigger",
+  "TeamType": "Private+Team",
+  "TeamName": "Some Name",
+  "TicketID": "00000000",
+  "CallbackID": "<RANDOMLY GENERATED UNIQUE GUID>",
+  "Requestor": "email.address@oregonstate.edu"
+}
+```
+
+### Callback to check the status of the newly created team
+
+```HTTP REST
+GET /api/CheckCallbackID?code=<AZUREFUNCTIONKEY>&CallbackID={
+  "CallbackID": "<CALLBACK ID BASED ON PREVIOUS RESPONSE>"
+} HTTP/1.1
+Host: <HOST>
+```

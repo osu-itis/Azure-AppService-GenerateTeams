@@ -1,7 +1,0 @@
-POST https://<FUNCTIONAPPNAME>.azurewebsites.net/api/HttpTrigger?code=<AZUREFUNCTIONKEY>  {
-"TeamName": "Name",
-"TeamType": "Type",
-"TicketID": "123",
-"Requestor": "requestor@oregonstate.edu",
-"TeamDescription": "Description of the team."
-}

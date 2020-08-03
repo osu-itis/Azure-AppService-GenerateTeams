@@ -1,1 +1,0 @@
-GET https://<FUNCTIONAPPNAME>.azurewebsites.net/api/CheckCallbackID?code=<AZUREFUNCTIONKEY>&CallbackID={   "CallbackID": "<CALLBACKID>" }  
