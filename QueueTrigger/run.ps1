@@ -171,7 +171,6 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphTeamReque
         }
         Visibility        = $(
             try {
-                #$this.TeamType
                 switch ($this.TeamType) {
                     { $_ -like "Private+Team" } { "Private" }
                     { $_ -like "Public+Team" } { "Public" }
