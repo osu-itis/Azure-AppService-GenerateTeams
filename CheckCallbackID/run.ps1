@@ -83,12 +83,12 @@ $Results = Get-AzTableRow @TableEntryQuery
 #Testing for the client id
 switch ($Results) {
     #If the result status is success:
-    {$_.status -eq "SUCCESS"} {
+    { $_.status -eq "SUCCESS" } {
         $status = [HttpStatusCode]::OK
         $body = $Results
     }
     #If the result status is failed:
-    {$_.status -eq "FAILED"} {
+    { $_.status -eq "FAILED" } {
         $status = [HttpStatusCode]::BadRequest
         #Note that we are still returning the results, but it also returns a bad request status (which can be used to automate workflows based on the response)
         $body = $Results
