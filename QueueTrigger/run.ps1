@@ -82,7 +82,8 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
     $Body = @{
         DisplayName          = $(
             try {
-                [string]$this.TeamName.replace("+", " ").trim()
+                #If the HTML URL encoding is using '+' replace with the space character, if the character is '%2B' Replace with '+' (so the displayname is properly set with the correct characters)
+                [string]$this.TeamName.replace("+", " ").replace("%2B", "+").trim()
             }
             catch {
                 Write-Error -Message "Failed to identity the display name" -ErrorAction Stop
