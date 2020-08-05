@@ -99,14 +99,9 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         groupTypes           = @([string]"Unified")
         MailEnabled          = [bool]$true
         MailNickname         = $(
-            #Testing if the name of the team (not counting spaces) is less than 8 characters, if so, add "TeamGroup" onto the mail nickname to ensure that the number of characters is over 8.
+            #Randomly generate a unique MailNickname based off of the TeamName and a randomized string
             try {
-                if (([string]$this.TeamName.Replace(" ", "") | Measure-Object -Character).Characters -lt 8) {
-                    [string]$this.TeamName.Replace(" ", "") + "+TeamGroup"
-                }
-                else {
-                    [string]$this.TeamName.Replace(" ", "")
-                }
+                [string]$this.TeamName.Replace(" ", "") + [string](Get-Random)
             }
             catch {
                 Write-Error -Message "Failed to identity the Mail Nickname" -ErrorAction Stop
