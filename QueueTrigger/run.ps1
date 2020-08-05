@@ -259,3 +259,8 @@ Write-Host -message $($Output | convertto-json)
 
 #Writing to the table (for logging purposes)
 Push-OutputBinding -Name LoggedTeamsRequests -Value $Output
+
+#If the script failed to create a new team, we want this to throw an error
+if ($Output.status -eq "FAILED") {
+    Throw "Script failed to generate a new Microsoft Teams team."
+}
