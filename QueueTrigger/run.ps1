@@ -144,6 +144,8 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
             }
         )
         securityEnabled      = [bool]$false
+        #Although this appears to only be hiding the group from Outlook, this property should be equivalent to Setting the group as hidden from the Global Address List in exchange
+        resourceBehaviorOptions = @([string]"HideGroupInOutlook")
         Visibility           = $(
             try {
                 #$this.TeamType
