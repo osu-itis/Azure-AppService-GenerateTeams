@@ -14,6 +14,36 @@ if ([string]::IsNullOrEmpty($env:ClientID)) { Throw 'Could not find $env:ClientI
 if ([string]::IsNullOrEmpty($env:ClientSecret)) { Throw 'Could not find $env:ClientSecret' }
 if ([string]::IsNullOrEmpty($env:TenantId)) { Throw 'Could not find $env:TenantId' }
 
+Function convertformat {
+    <#
+    .SYNOPSIS
+    Converts HTML encoding to standard formatting and removes any leading or trailing whitespace
+    
+    .PARAMETER InputText
+    The input text to convert
+    
+    .EXAMPLE
+    PS>$temp = "This+is+a+test%2fexample%0D%0A%0D%0AAnd+it+rocks"
+    PS>convertformat -InputText $temp
+    
+    This is a test/example
+    
+    And it rocks
+    "
+    #>
+    PARAM (
+        [parameter(Mandatory=$true)][string]$InputText
+    )
+
+    $OutputText = [string]$(
+        [System.Web.HttpUtility]::UrlDecode(
+            $InputText
+        )
+    ).Trim()
+
+    Return $OutputText
+}
+
 $ClientInfo = [PSCustomObject]@{
     #This is the ClientID (Application ID) of registered AzureAD App
     ClientID     = $env:ClientID
@@ -83,7 +113,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         DisplayName          = $(
             try {
                 #If the HTML URL encoding is using '+' replace with the space character, if the character is '%2B' Replace with '+' (so the displayname is properly set with the correct characters)
-                [string]$this.TeamName.replace("+", " ").replace("%2B", "+").trim()
+                convertformat -InputText [string]$this.TeamName
             }
             catch {
                 Write-Error -Message "Failed to identity the display name" -ErrorAction Stop
@@ -92,7 +122,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         Description          = $(
             try {
                 #Replace all + signs with spaces, fix slashes, and fix carage returns/new lines
-                [string]$this.TeamDescription.replace("+", " ").replace("%2", "/").replace("%0D%0A", "`r`n").trim()
+                convertformat -InputText [string]$this.TeamDescription
             }
             catch {
                 Write-Error -Message "Failed to identity the description" -ErrorAction Stop
@@ -103,7 +133,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         MailNickname         = $(
             #Randomly generate a unique MailNickname based off of the TeamName and a randomized string
             try {
-                [string]$this.TeamName.Replace(" ", "") + [string](Get-Random)
+                (convertformat -InputText [string]$this.TeamName).Replace(" ", "") + [string](Get-Random)
             }
             catch {
                 Write-Error -Message "Failed to identity the Mail Nickname" -ErrorAction Stop
