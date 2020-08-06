@@ -32,8 +32,10 @@ Function convertformat {
     "
     #>
     PARAM (
-        [parameter(Mandatory=$true)][string]$InputText
+        [parameter(Mandatory = $true)][string]$InputText
     )
+
+    Add-Type -AssemblyName System.Web
 
     $OutputText = [string]$(
         [System.Web.HttpUtility]::UrlDecode(
@@ -112,8 +114,8 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
     $Body = @{
         DisplayName          = $(
             try {
-                #If the HTML URL encoding is using '+' replace with the space character, if the character is '%2B' Replace with '+' (so the displayname is properly set with the correct characters)
-                convertformat -InputText [string]$this.TeamName
+                #Convert any character encoding to plain text
+                convertformat -InputText $( $this.TeamName.tostring() )
             }
             catch {
                 Write-Error -Message "Failed to identity the display name" -ErrorAction Stop
@@ -121,8 +123,8 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         )
         Description          = $(
             try {
-                #Replace all + signs with spaces, fix slashes, and fix carage returns/new lines
-                convertformat -InputText [string]$this.TeamDescription
+                #Convert any character encoding to plain text
+                convertformat -InputText $( $this.TeamDescription.tostring() )
             }
             catch {
                 Write-Error -Message "Failed to identity the description" -ErrorAction Stop
@@ -131,9 +133,11 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         groupTypes           = @([string]"Unified")
         MailEnabled          = [bool]$true
         MailNickname         = $(
-            #Randomly generate a unique MailNickname based off of the TeamName and a randomized string
+            #Remove any spaces, remove slashes, and append a unique string to ensure that the MailNickname is unique and convert any character encoding to plain text
             try {
-                (convertformat -InputText [string]$this.TeamName).Replace(" ", "") + [string](Get-Random)
+                $(
+                    convertformat -InputText $( $this.TeamName.tostring().replace(" ", "").replace("/", "").replace("\", "") + [string](Get-Random) )
+                )
             }
             catch {
                 Write-Error -Message "Failed to identity the Mail Nickname" -ErrorAction Stop
@@ -174,6 +178,8 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
             )
         )
     } | ConvertTo-Json
+
+    $Body|Export-Clixml -Path .\BODY.CLI.XML
 
     try {
         $this.GroupResults = $(
