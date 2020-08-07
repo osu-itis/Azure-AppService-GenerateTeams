@@ -144,8 +144,6 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
             }
         )
         securityEnabled      = [bool]$false
-        #Although this appears to only be hiding the group from Outlook, this property should be equivalent to Setting the group as hidden from the Global Address List in exchange
-        resourceBehaviorOptions = @([string]"HideGroupInOutlook")
         Visibility           = $(
             try {
                 #$this.TeamType
@@ -180,8 +178,6 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
             )
         )
     } | ConvertTo-Json
-
-    $Body|Export-Clixml -Path .\BODY.CLI.XML
 
     try {
         $this.GroupResults = $(
@@ -225,7 +221,12 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphTeamReque
 
     try {
         $this.TeamResults = $(
+            #Make the post request:
             Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/groups/$($this.GroupResults.ID)/team"  -Authentication Bearer -Token $ClientInfo.TokenString  -Method "Put" -ContentType "application/json" -Body $Body
+            #Since setting the group to be hidden from the address list can only be done via a patch and not a post, Patch the group:
+            if ($this.TeamType -eq "Private+Team") {
+                Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/groups/$($this.GroupResults.ID)/team"  -Authentication Bearer -Token $ClientInfo.TokenString  -Method "Patch" -ContentType "application/json" -Body $(@{hideFromAddressLists = 'true'}|Convertto-Json)
+            }
         )
     }
     catch {
