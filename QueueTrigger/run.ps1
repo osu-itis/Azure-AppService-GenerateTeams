@@ -136,7 +136,7 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
             #Remove any spaces, remove slashes, and append a unique string to ensure that the MailNickname is unique and convert any character encoding to plain text
             try {
                 $(
-                    convertformat -InputText $( $this.TeamName.tostring().replace(" ", "").replace("/", "").replace("\", "") + [string](Get-Random) )
+                    (convertformat -InputText $( $this.TeamName.tostring() + [string](Get-Random) )).replace(" ", "").replace("/", "").replace("\", "")
                 )
             }
             catch {
