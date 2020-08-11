@@ -6,6 +6,32 @@ param($Request, $TriggerMetadata)
 # Write to the Azure Functions log stream.
 Write-Host "PowerShell HTTP trigger function processed a request."
 
+#Setting needed function:
+function HTTPResponse {
+    <#
+    .SYNOPSIS
+    Sending a HTTP Response back with the status and body
+    #>
+    PARAM (
+        [parameter(Mandatory = $true)]$status,
+        [parameter(Mandatory = $true)]$body
+    )
+    
+    try {
+        # Associate values to output bindings by calling 'Push-OutputBinding'.
+        Push-OutputBinding -Name Response -Value (
+            [HttpResponseContext]@{
+                StatusCode = $status
+                Body       = $body
+            }
+        )
+        Write-Host -message "Send Response with status of $status"
+    }
+    catch {
+        throw
+    }
+}
+
 #Checking if the needed ENVs exist:
 if ([string]::IsNullOrEmpty($env:TenantId)) { Throw 'Could not find $env:TenantId' }
 if ([string]::IsNullOrEmpty($env:AzureWebJobsStorage)) { Throw 'Could not find $env:AzureWebJobsStorage' }
@@ -54,7 +80,13 @@ $Settings = [pscustomobject]@{
 }
 
 #Gathering the Client ID from the query of the request, converted from Json
-$CallbackID = $Request.Query.CallbackID | ConvertFrom-Json | Select-Object -ExpandProperty CallbackID
+try {
+    $CallbackID = $Request.Query.CallbackID | ConvertFrom-Json | Select-Object -ExpandProperty CallbackID
+}
+catch {
+    HTTPResponse -status $([HttpStatusCode]::BadRequest) -body "Could not find CallbackID"
+    throw
+}
 
 #Gather the AZ Storage Context which provides information about the account to be used
 $StorageAccount = [pscustomobject]@{
@@ -70,11 +102,16 @@ $ServicePrincipalAccount = New-Object System.Management.Automation.PSCredential 
 #Connecting to an AD service account (which auto-loads the "AzStorageTable" cmdlets, this is required to use this commands)
 Connect-AzAccount -Tenant $Settings.TenantID -Credential $ServicePrincipalAccount -ServicePrincipal
 
-#Generating the table entry to query
-$TableEntryQuery = @{
-    RowKey       = $($CallbackID.trim())
-    PartitionKey = $Settings.PartitionKey
-    Table        = $AzureStorageTable.CloudTable
+try {
+    #Generating the table entry to query
+    $TableEntryQuery = @{
+        RowKey       = $($CallbackID.trim())
+        PartitionKey = $Settings.PartitionKey
+        Table        = $AzureStorageTable.CloudTable
+    }
+}
+catch {
+    throw
 }
 
 #Gathering the AZ table row info (using information about the table to gather the correct entry)
@@ -100,10 +137,10 @@ switch ($Results) {
     }
 }
 
-# Associate values to output bindings by calling 'Push-OutputBinding'.
-Push-OutputBinding -Name Response -Value (
-    [HttpResponseContext]@{
-        StatusCode = $status
-        Body       = $body
-    }
-)
+try {
+    #Sending the response
+    HTTPResponse -status $status -body $body
+}
+catch {
+    Throw    
+}
