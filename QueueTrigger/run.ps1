@@ -10,9 +10,13 @@ Write-Host "PowerShell queue trigger function processed work item: $($Queue |con
 Write-Host "Queue item insertion time: $($TriggerMetadata.InsertionTime)"
 
 #Checking if the needed ENVs exist:
+if ([string]::IsNullOrEmpty($env:AzureWebJobsStorage)) { Throw 'Could not find $env:AzureWebJobsStorage' }
 if ([string]::IsNullOrEmpty($env:ClientID)) { Throw 'Could not find $env:ClientID' }
 if ([string]::IsNullOrEmpty($env:ClientSecret)) { Throw 'Could not find $env:ClientSecret' }
 if ([string]::IsNullOrEmpty($env:TenantId)) { Throw 'Could not find $env:TenantId' }
+if ([string]::IsNullOrEmpty($env:CertificateThumbprint)) { Throw 'Could not find $env:CertificateThumbprint' }
+if ([string]::IsNullOrEmpty($env:ServiceAccountUsername)) { Throw 'Could not find $env:ServiceAccountUsername' }
+if ([string]::IsNullOrEmpty($env:ServiceAccountPassword)) { Throw 'Could not find $env:ServiceAccountPassword' }
 
 Function convertformat {
     <#
@@ -233,6 +237,37 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphTeamReque
     }
 }
 
+#Create a method to that uses powershell to set the visibility of the Group in the Global Address List
+$TempObject| Add-Member -Force -MemberType ScriptMethod -name SetVisibilityInPowershell -Value {
+    #Using the env variables set in the azure function app, generate a credential object
+    $userName = $env:ServiceAccountUsername
+    $userPassword = $env:ServiceAccountPassword
+    [securestring]$secStringPassword = ConvertTo-SecureString $userPassword -AsPlainText -Force
+    [pscredential]$o365cred = New-Object System.Management.Automation.PSCredential ($userName, $secStringPassword)
+    
+    #Create the new PSSession and then import it
+    $o365session = New-PSSession -configurationname Microsoft.Exchange -connectionuri https://outlook.office365.com/powershell-liveid/ -credential $o365cred -authentication basic -allowredirection
+    $null = Import-PSSession $o365session -allowclobber -disablenamechecking
+    
+    #It can take up to 15 min to replicate, loop checks for the existance of the object and wait until its ready before proceeding
+    $attempt = $null
+    do {
+        try {
+            $attempt = Get-UnifiedGroup $this.GroupResults.id -ErrorAction stop
+        }
+        catch {
+        Write-Host "Waiting one minute before trying again..."
+        Start-Sleep -Seconds 60        
+        }
+    } until ($null -ne $attempt)
+    
+    #After replication, we want to set the unified group
+    Set-UnifiedGroup $this.GroupResults.id -HiddenFromAddressListsEnabled $true
+    
+    #Remove the session now that we no longer need the exchange module and powershell commands
+    Remove-PSSession -Session $o365session
+}
+
 #Adding the script method to gather the results
 $TempObject | Add-Member -Force -MemberType ScriptMethod -Name GenerateResults -Value {
     $this.Results = [hashtable]@{
@@ -241,6 +276,17 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name GenerateResults -
         Description = [string]$this.TeamResults.description
         Mail        = [string]$this.GroupResults.mail
         Visibility  = [string]$this.GroupResults.visibility
+        partitionKey = 'TeamsLog'
+        rowKey = $($this.CallbackID)
+        TicketID = $($this.TicketID)
+        Status       = $(
+            #Any needed tests to confirm that the team was successfully created
+            switch ($this) {
+                { [string]::isnullorempty($_.TeamResults) } { [string]"FAILED" }
+                { -not [string]::isnullorempty($_.TeamResults.ID) } { [string]"SUCCESS" }
+                Default { "UNKNOWN" }
+            }
+        )
     }
 }
 
@@ -256,29 +302,14 @@ $TempObject.NewGraphTeamRequest()
 #Wait for a few moments
 Start-Sleep -Seconds 15
 
+#Set the visibility in powershell
+$TempObject.SetVisibilityInPowershell()
+
 #Generate the results
 $TempObject.GenerateResults()
 
-#Creating the table logging (needed table attributes)
-$TabbleLogging = [hashtable]@{
-    partitionKey = 'TeamsLog'
-    rowKey       = $($TempObject.CallbackID)
-    TicketID     = $($TempObject.TicketID)
-    Status       = $(
-        #Any needed tests to confirm that the team was successfully created
-        switch ($TempObject) {
-            { [string]::isnullorempty($_.TeamResults) } { [string]"FAILED" }
-            { -not [string]::isnullorempty($_.TeamResults.ID) } { [string]"SUCCESS" }
-            Default { "UNKNOWN" }
-        }
-    )
-}
-
-#Adding our temp attributes, the table attributes & the status of the group
-$Output = $TabbleLogging + $TempObject.Results
-
 #Adding any logging or error information needed
-$Output | Add-Member -NotePropertyMembers @{
+$TempObject.Results | Add-Member -NotePropertyMembers @{
     ErrorCount = $error.Count
     Errors     = $(
         if ($StartErrorCount -ne $error.Count) {
@@ -289,12 +320,14 @@ $Output | Add-Member -NotePropertyMembers @{
 
 #Converting to Json and pushing out to the host for humans to read
 Write-Host -message "Final Output:"
-Write-Host -message $($Output | convertto-json)
+Write-Host -message $($TempObject.Results | convertto-json)
+
+Export-Clixml -InputObject $TempObject .\TempObject.cli.xml
 
 #Writing to the table (for logging purposes)
-Push-OutputBinding -Name LoggedTeamsRequests -Value $Output
+Push-OutputBinding -Name LoggedTeamsRequests -Value $TempObject.Results
 
 #If the script failed to create a new team, we want this to throw an error
-if ($Output.status -eq "FAILED") {
+if ($TempObject.Results.status -eq "FAILED") {
     Throw "Script failed to generate a new Microsoft Teams team."
 }
