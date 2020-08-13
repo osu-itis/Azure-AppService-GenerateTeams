@@ -146,7 +146,6 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequ
         securityEnabled      = [bool]$false
         Visibility           = $(
             try {
-                #$this.TeamType
                 switch ($this.TeamType) {
                     { $_ -like "Private+Team" } { "Private" }
                     { $_ -like "Public+Team" } { "Public" }
@@ -248,13 +247,13 @@ $TempObject | Add-Member -Force -MemberType ScriptMethod -Name GenerateResults -
 #Generate the new group
 $TempObject.NewGraphGroupRequest()
 
-#wait for a few moments
+#Wait for a few moments
 Start-Sleep -Seconds 15
 
-#generate the new team (from the existing group)
+#Generate the new team (from the existing group)
 $TempObject.NewGraphTeamRequest()
 
-#wait for a few moments
+#Wait for a few moments
 Start-Sleep -Seconds 15
 
 #Generate the results
