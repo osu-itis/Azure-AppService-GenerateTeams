@@ -1,35 +1,44 @@
 Class CustomTeamObject {
+    #Basic attributes
     [String]$TeamDescription
     [String]$TeamType
     [String]$TeamName
     [String]$TicketID
     [String]$Requestor
     [String]$CallbackID
+
+    #Credentials that needed to run methods
     [securestring]$GraphTokenString
     [pscredential]$ServiceAccountCredential
+
+    #Attribues that will store calculated values
+    [string]$TeamOwner
+    [string]$MailNickname
+
+    #Attributes that contain the results of GRAPH API calls
     [PSCustomObject]$GroupResults
     [PSCustomObject]$TeamResults
     [PSCustomObject]$Results
-    [void]NewGraphGroupRequest() {
 
-
+    #Custom Methods
+    [void]CleanAttributes() {
         Function convertformat {
             <#
-    .SYNOPSIS
-    Converts HTML encoding to standard formatting and removes any leading or trailing whitespace
+            .SYNOPSIS
+            Converts HTML encoding to standard formatting and removes any leading or trailing whitespace
 
-    .PARAMETER InputText
-    The input text to convert
+            .PARAMETER InputText
+            The input text to convert
 
-    .EXAMPLE
-    PS>$temp = "This+is+a+test%2fexample%0D%0A%0D%0AAnd+it+rocks"
-    PS>convertformat -InputText $temp
+            .EXAMPLE
+            PS>$temp = "This+is+a+test%2fexample%0D%0A%0D%0AAnd+it+rocks"
+            PS>convertformat -InputText $temp
 
-    This is a test/example
+            This is a test/example
 
-    And it rocks
-    "
-    #>
+            And it rocks
+            "
+            #>
             PARAM (
                 [parameter(Mandatory = $true)][string]$InputText
             )
@@ -45,88 +54,65 @@ Class CustomTeamObject {
             Return $OutputText
         }
 
+        #Processing the attributes
+        $this.TeamDescription = convertformat -InputText $( $this.TeamDescription )
+        $this.TeamType = $(
+            switch ($this.TeamType) {
+                { $_ -eq "Private+Team" } { "Private" }
+                { $_ -eq "Public+Team" } { "Public" }
+            }
+        )
+        $this.TeamName = convertformat -InputText $( $this.TeamName )
+        $this.Requestor = convertformat -InputText $( $this.Requestor )
 
+    }
+    [void]ResolveTeamOwner() {
         #Get the Owner ID based on the email address that was provided
         #Generating the params that are needed for the query
         $params = @{
             #This formatting is intentional, the $filter needs to be single quoted due to the dollarsign, the single quotes need to be double quoted and the variables should not be single quoted so they are evaluated properly
             #Example of the output: https://graph.microsoft.com/v1.0/users/?$filter=mail eq 'email.address@oregonstate.edu' or userprincipalname eq 'email.address@oregonstate.edu'
-            Uri            = "https://graph.microsoft.com/v1.0/users/" + '?$filter=mail eq' + " '" + $($this.Requestor.replace("%40", "@")) + "' " + 'or userprincipalname eq' + " '" + $($this.Requestor.replace("%40", "@")) + "' "
+            Uri            = "https://graph.microsoft.com/v1.0/users/" + '?$filter=mail eq' + " '" + $($this.Requestor) + "' " + 'or userprincipalname eq' + " '" + $($this.Requestor) + "' "
             Authentication = "Bearer"
             Token          = $this.GraphTokenString
             Method         = "Get"
         }
         #Making the graph query and setting a variable with the ID that was returned in the response
-        $Owner = (Invoke-RestMethod @params).value.id
-
-        #setting the needed body parameters & converting to JSON format
+        try {
+            $this.TeamOwner = (Invoke-RestMethod @params).value.id
+        }
+        catch {
+            Write-Error -Message "Failed to identity the Owner" -ErrorAction Stop
+        }
+    }
+    [void]GenerateMailNickname() {
+        $this.MailNickname = $(
+            #Remove any spaces, remove slashes, and append a unique string to ensure that the MailNickname is unique and convert any character encoding to plain text
+            #Add a randomized string to make it unique, convert any character encoding to plain text and remove any slashes or spaces
+            try {
+                Add-Type -AssemblyName System.Web
+                $( [System.Web.HttpUtility]::UrlDecode( $this.TeamName.tostring() + [string](Get-Random) ) ).replace(" ", "").replace("/", "").replace("\", "")
+            }
+            catch {
+                Write-Error -Message "Failed to generate the Mail Nickname" -ErrorAction Stop
+            }
+        )
+    }
+    [void]NewGraphGroupRequest() {
+        #Setting the needed body parameters & converting to JSON format
         $Body = @{
-            DisplayName          = $(
-                try {
-                    #Convert any character encoding to plain text
-                    convertformat -InputText $( $this.TeamName )
-                }
-                catch {
-                    Write-Error -Message "Failed to identity the display name" -ErrorAction Stop
-                }
-            )
-            Description          = $(
-                try {
-                    #Convert any character encoding to plain text
-                    convertformat -InputText $( $this.TeamDescription )
-                }
-                catch {
-                    Write-Error -Message "Failed to identity the description" -ErrorAction Stop
-                }
-            )
+            DisplayName          = $this.TeamName
+            Description          = $this.TeamDescription
             groupTypes           = @([string]"Unified")
             MailEnabled          = [bool]$true
-            MailNickname         = $(
-                #Remove any spaces, remove slashes, and append a unique string to ensure that the MailNickname is unique and convert any character encoding to plain text
-                try {
-                    $(
-                        convertformat -InputText $( $this.TeamName.tostring().replace(" ", "").replace("/", "").replace("\", "") + [string](Get-Random) )
-                    )
-                }
-                catch {
-                    Write-Error -Message "Failed to identity the Mail Nickname" -ErrorAction Stop
-                }
-            )
+            MailNickname         =
             securityEnabled      = [bool]$false
-            Visibility           = $(
-                try {
-                    switch ($this.TeamType) {
-                        { $_ -like "Private+Team" } { "Private" }
-                        { $_ -like "Public+Team" } { "Public" }
-                        Default { "Private" }
-                    }
-                }
-                catch {
-                    Write-Error -Message "Failed to identity the Team type" -ErrorAction Stop
-                }
-            )
-            "owners@odata.bind"  = [array]@(
-                $(
-                    try {
-                        [string]"https://graph.microsoft.com/v1.0/users/$Owner"
-                    }
-                    catch {
-                        Write-Error -Message "Failed to identity the Owner" -ErrorAction Stop
-                    }
-                )
-            )
-            "Members@odata.bind" = [array]@(
-                $(
-                    try {
-                        [string]"https://graph.microsoft.com/v1.0/users/$Owner"
-                    }
-                    catch {
-                        Write-Error -Message "Failed to identity the Owner" -ErrorAction Stop
-                    }
-                )
-            )
+            Visibility           = $this.TeamType
+            "owners@odata.bind"  = [array]@( $( [string]"https://graph.microsoft.com/v1.0/users/$($this.teamOwner)" ) )
+            "Members@odata.bind" = [array]@( $( [string]"https://graph.microsoft.com/v1.0/users/$($this.TeamOwner)" ) )
         } | ConvertTo-Json
 
+        #Making a graph request for a new group
         try {
             $this.GroupResults = $(
                 Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/groups" -Authentication Bearer -Token $this.GraphTokenString -Method "Post" -ContentType "application/json" -Body $Body
@@ -152,18 +138,7 @@ Class CustomTeamObject {
                 allowGiphy         = $true
                 giphyContentRating = [string]"Moderate"
             }
-            Visibility        = $(
-                try {
-                    switch ($this.TeamType) {
-                        { $_ -like "Private+Team" } { "Private" }
-                        { $_ -like "Public+Team" } { "Public" }
-                        Default { "Private" }
-                    }
-                }
-                catch {
-                    Write-Error -Message "Failed to identity the Team type" -ErrorAction Stop
-                }
-            )
+            Visibility        = $this.TeamType
         } | ConvertTo-Json
 
         try {
@@ -181,8 +156,8 @@ Class CustomTeamObject {
                 @{
                     ShowInTeamsSearchAndSuggestions = $(
                         switch ($this.TeamType) {
-                            { $_ -eq "Private+Team" } { $false }
-                            { $_ -eq "Public+Team" } { $true }
+                            { $_ -eq "Private" } { $false }
+                            { $_ -eq "Public" } { $true }
                             Default { $false }
                         }
                     )
@@ -265,7 +240,21 @@ Class CustomTeamObject {
         write-host "Exporting a copy of the last run object to an xml"
         Export-Clixml -InputObject $this .\TempObject.cli.xml
     }
+
+    #This particular method uses all of the other methods in order to generate a new Microsoft Team automatically
     [void]AutoCreateTeam() {
+        #Start by cleaning attributes as needed
+        Write-Host "Cleaning attributes"
+        $this.CleanAttributes()
+
+        #Resolve the Team Owner (based on the ID that will be used in graph requests)
+        Write-Host "Resolving Team Owner"
+        $this.ResolveTeamOwner()
+
+        #Generate the new mail nickname
+        Write-Host "Generating a unique mail nick name"
+        $this.GenerateMailNickname()
+
         #Generate the new group
         write-host "Generating a new group request via graph api"
         $this.NewGraphGroupRequest()
@@ -279,11 +268,11 @@ Class CustomTeamObject {
 
         #Set the visibility in powershell (if needed) This can take a very long time as it requires that Exchange has replicated
         switch ($this.TeamType) {
-            { $_ -eq "Public+Team" } {
+            { $_ -eq "Public" } {
                 #Do not make any changes to the visibility in the GAL
                 write-host "No changes made to the visibility in the GAL"
             }
-            { $_ -eq "Private+Team" } {
+            { $_ -eq "Private" } {
                 write-host "Using Powershell to hide visibility in the GAL"
                 $this.SetVisibilityInPowershell()
             }
@@ -296,6 +285,5 @@ Class CustomTeamObject {
         #Generate the results
         write-host "Gathering a report of the results"
         $this.GenerateResults()
-
     }
 }
