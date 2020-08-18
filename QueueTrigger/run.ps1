@@ -5,10 +5,6 @@ $StartErrorCount = [int]$(
     $error.Count
 )
 
-# Write out the queue message and insertion time to the information log.
-Write-Host "PowerShell queue trigger function processed work item: $($Queue |convertto-json )"
-Write-Host "Queue item insertion time: $($TriggerMetadata.InsertionTime)"
-
 #Checking if the needed ENVs exist:
 if ([string]::IsNullOrEmpty($env:AzureWebJobsStorage)) { Throw 'Could not find $env:AzureWebJobsStorage' }
 if ([string]::IsNullOrEmpty($env:ClientID)) { Throw 'Could not find $env:ClientID' }
@@ -18,297 +14,83 @@ if ([string]::IsNullOrEmpty($env:CertificateThumbprint)) { Throw 'Could not find
 if ([string]::IsNullOrEmpty($env:ServiceAccountUsername)) { Throw 'Could not find $env:ServiceAccountUsername' }
 if ([string]::IsNullOrEmpty($env:ServiceAccountPassword)) { Throw 'Could not find $env:ServiceAccountPassword' }
 
-Function convertformat {
-    <#
-    .SYNOPSIS
-    Converts HTML encoding to standard formatting and removes any leading or trailing whitespace
+#Importing all of the needed files:
+. .\QueueTrigger\ClientInfo.ps1
+. .\QueueTrigger\CustomTeamObject.ps1
+
+#Generate the client info so we can make graph API calls
+$ClientInfo = [GraphAPIToken]::new($env:ClientID, $env:ClientSecret, $env:TenantID)
+
+#Generate the temporary object that will contain all of our temp variables
+$TempObject = [CustomTeamObject]@{
+    #Setting all of the items that are inputed from the Azure Queue
+    TeamName                 = $queue.TeamName
+    TeamDescription          = $queue.TeamDescription
+    TeamType                 = $queue.TeamType
+    TicketID                 = $queue.TicketID
+    Requestor                = $queue.Requestor
+    CallbackID               = $queue.CallbackID
     
-    .PARAMETER InputText
-    The input text to convert
+    #Using the Graph token info
+    GraphTokenString         = $ClientInfo.TokenString
     
-    .EXAMPLE
-    PS>$temp = "This+is+a+test%2fexample%0D%0A%0D%0AAnd+it+rocks"
-    PS>convertformat -InputText $temp
-    
-    This is a test/example
-    
-    And it rocks
-    "
-    #>
-    PARAM (
-        [parameter(Mandatory = $true)][string]$InputText
+    #Generating the service credential that is needed to make powershell calls
+    ServiceAccountCredential = $(
+        #Using the env variables set in the azure function app, generate a credential object
+        $userName = $env:ServiceAccountUsername
+        $userPassword = $env:ServiceAccountPassword
+        [securestring]$secStringPassword = ConvertTo-SecureString $userPassword -AsPlainText -Force
+        [pscredential]$o365cred = New-Object System.Management.Automation.PSCredential ($userName, $secStringPassword)
+        $o365cred
     )
-
-    Add-Type -AssemblyName System.Web
-
-    $OutputText = [string]$(
-        [System.Web.HttpUtility]::UrlDecode(
-            $InputText
-        )
-    ).Trim()
-
-    Return $OutputText
 }
 
-$ClientInfo = [PSCustomObject]@{
-    #This is the ClientID (Application ID) of registered AzureAD App
-    ClientID     = $env:ClientID
-    #This is the key of the registered AzureAD app
-    ClientSecret = $env:ClientSecret
-    #This is your our Tenant ID
-    TenantId     = $env:TenantId
-    #Leaving the headers blank for now, they'll be generated via a scriptmethod below
-    Headers      = $null
-    #Adding the token as a standalone variable (This can be used with invoke-restmethod after PS version 6.*)
-    TokenString  = $null
-}
+# Write out the queue message and insertion time to the information log.
+Write-Host "PowerShell queue trigger function processed work item: $($Queue |convertto-json )"
+Write-Host "Queue item insertion time: $($TriggerMetadata.InsertionTime)"
 
-#Adding the "NewOAuthRequest" script method to generate a token and the needed Headers (added to the ClientInfo object)
-$ClientInfo | Add-Member -MemberType ScriptMethod -Name NewOAuthRequest -Value {
-    $body = [hashtable]@{
-        client_id     = [string]$this.ClientID
-        client_secret = [string]$this.ClientSecret
-        grant_type    = [string]"client_credentials"
-        scope         = [uri]"https://graph.microsoft.com/.default"
-    }
-
-    try {
-        $OAuthReq = $(Invoke-RestMethod -Method Post -Uri "https://login.microsoftonline.com/$($this.TenantId)/oauth2/v2.0/token" -Body $Body)
-    }
-    #If this fails out, stop everything, nothing will work without that token
-    catch {
-        write-error -message $Error[0].Exception -ErrorAction Stop
-    }
-    #Creating the headers in for format of 'Bearer <TOKEN>', this will be needed for all future requests
-    $this.Headers = @{
-        Authorization = "$($OAuthReq.token_type) $($OAuthReq.access_token))"
-    }
-    $this.TokenString = $(ConvertTo-SecureString -String ($OAuthReq.access_token) -AsPlainText -Force)
-}
-
-#Generate the needed auth request and token
-$ClientInfo.NewOAuthRequest()
-
-#Creating a new variable as our temp object (as a hash table)
-[pscustomobject]$TempObject = [pscustomobject]$Queue
-
-$TempObject | Add-Member -NotePropertyMembers @{
-    GroupResults = $null
-    TeamResults  = $null
-    Results      = $null
-}
-
-#Adding the script method for the a group request
-$TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphGroupRequest -Value {
-        
-    #Get the Owner ID based on the email address that was provided
-    #Generating the params that are needed for the query
-    $params = @{
-        #This formatting is intentional, the $filter needs to be single quoted due to the dollarsign, the single quotes need to be double quoted and the variables should not be single quoted so they are evaluated properly
-        #Example of the output: https://graph.microsoft.com/v1.0/users/?$filter=mail eq 'email.address@oregonstate.edu' or userprincipalname eq 'email.address@oregonstate.edu'
-        Uri            = "https://graph.microsoft.com/v1.0/users/" + '?$filter=mail eq' + " '" + $($this.Requestor.replace("%40", "@")) + "' " + 'or userprincipalname eq' + " '" + $($this.Requestor.replace("%40", "@")) + "' "
-        Authentication = "Bearer"
-        Token          = $ClientInfo.TokenString
-        Method         = "Get"
-    }
-    #Making the graph query and setting a variable with the ID that was returned in the response
-    $Owner = (Invoke-RestMethod @params).value.id
-    
-    #setting the needed body parameters & converting to JSON format
-    $Body = @{
-        DisplayName          = $(
-            try {
-                #Convert any character encoding to plain text
-                convertformat -InputText $( $this.TeamName.tostring() )
-            }
-            catch {
-                Write-Error -Message "Failed to identity the display name" -ErrorAction Stop
-            }
-        )
-        Description          = $(
-            try {
-                #Convert any character encoding to plain text
-                convertformat -InputText $( $this.TeamDescription.tostring() )
-            }
-            catch {
-                Write-Error -Message "Failed to identity the description" -ErrorAction Stop
-            }
-        )
-        groupTypes           = @([string]"Unified")
-        MailEnabled          = [bool]$true
-        MailNickname         = $(
-            #Remove any spaces, remove slashes, and append a unique string to ensure that the MailNickname is unique and convert any character encoding to plain text
-            try {
-                $(
-                    convertformat -InputText $( $this.TeamName.tostring().replace(" ", "").replace("/", "").replace("\", "") + [string](Get-Random) )
-                )
-            }
-            catch {
-                Write-Error -Message "Failed to identity the Mail Nickname" -ErrorAction Stop
-            }
-        )
-        securityEnabled      = [bool]$false
-        Visibility           = $(
-            try {
-                switch ($this.TeamType) {
-                    { $_ -like "Private+Team" } { "Private" }
-                    { $_ -like "Public+Team" } { "Public" }
-                    Default { "Private" }
-                }
-            }
-            catch {
-                Write-Error -Message "Failed to identity the Team type" -ErrorAction Stop
-            }
-        )
-        "owners@odata.bind"  = [array]@(
-            $(
-                try {
-                    [string]"https://graph.microsoft.com/v1.0/users/$Owner"
-                }
-                catch {
-                    Write-Error -Message "Failed to identity the Owner" -ErrorAction Stop
-                }
-            )
-        )
-        "Members@odata.bind" = [array]@(
-            $(
-                try {
-                    [string]"https://graph.microsoft.com/v1.0/users/$Owner"
-                }
-                catch {
-                    Write-Error -Message "Failed to identity the Owner" -ErrorAction Stop
-                }
-            )
-        )
-    } | ConvertTo-Json
-
-    try {
-        $this.GroupResults = $(
-            Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/groups" -Authentication Bearer -Token $ClientInfo.TokenString -Method "Post" -ContentType "application/json" -Body $Body
-        )
-    }
-    catch {
-        write-error $(($error[0].ErrorDetails.Message | ConvertFrom-Json).error | Select-Object code, message)
-    }
-}
-
-#Adding the script method for the teams request
-$TempObject | Add-Member -Force -MemberType ScriptMethod -Name NewGraphTeamRequest -Value {
-    #Setting the needed settings for the team and converting the data to Json for the API call
-    $Body = @{
-        MemberSettings    = @{
-            allowCreatePrivateChannels = $true
-            allowCreateUpdateChannels  = $true
-        }
-        MessagingSettings = @{
-            allowUserEditMessages   = $true
-            allowUserDeleteMessages = $true
-        }
-        FunSettings       = @{
-            allowGiphy         = $true
-            giphyContentRating = [string]"Moderate"
-        }
-        Visibility        = $(
-            try {
-                switch ($this.TeamType) {
-                    { $_ -like "Private+Team" } { "Private" }
-                    { $_ -like "Public+Team" } { "Public" }
-                    Default { "Private" }
-                }
-            }
-            catch {
-                Write-Error -Message "Failed to identity the Team type" -ErrorAction Stop
-            }
-        )
-    } | ConvertTo-Json
-
-    try {
-        $this.TeamResults = $(
-            #Make the post request:
-            Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/groups/$($this.GroupResults.ID)/team"  -Authentication Bearer -Token $ClientInfo.TokenString  -Method "Put" -ContentType "application/json" -Body $Body
-            #Since setting the group to be hidden from the address list can only be done via a patch and not a post, Patch the group:
-            if ($this.TeamType -eq "Private+Team") {
-                Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/groups/$($this.GroupResults.ID)/team"  -Authentication Bearer -Token $ClientInfo.TokenString  -Method "Patch" -ContentType "application/json" -Body $(@{hideFromAddressLists = 'true'}|Convertto-Json)
-            }
-        )
-    }
-    catch {
-        write-error $(($error[0].ErrorDetails.Message | ConvertFrom-Json).error | Select-Object code, message)
-    }
-}
-
-#Create a method to that uses powershell to set the visibility of the Group in the Global Address List
-$TempObject| Add-Member -Force -MemberType ScriptMethod -name SetVisibilityInPowershell -Value {
-    #Using the env variables set in the azure function app, generate a credential object
-    $userName = $env:ServiceAccountUsername
-    $userPassword = $env:ServiceAccountPassword
-    [securestring]$secStringPassword = ConvertTo-SecureString $userPassword -AsPlainText -Force
-    [pscredential]$o365cred = New-Object System.Management.Automation.PSCredential ($userName, $secStringPassword)
-    
-    #Create the new PSSession and then import it
-    $o365session = New-PSSession -configurationname Microsoft.Exchange -connectionuri https://outlook.office365.com/powershell-liveid/ -credential $o365cred -authentication basic -allowredirection
-    $null = Import-PSSession $o365session -allowclobber -disablenamechecking
-    
-    #It can take up to 15 min to replicate, loop checks for the existance of the object and wait until its ready before proceeding
-    $attempt = $null
-    do {
-        try {
-            $attempt = Get-UnifiedGroup $this.GroupResults.id -ErrorAction stop
-        }
-        catch {
-        Write-Host "Waiting one minute before trying again..."
-        Start-Sleep -Seconds 60        
-        }
-    } until ($null -ne $attempt)
-    
-    #After replication, we want to set the unified group
-    Set-UnifiedGroup $this.GroupResults.id -HiddenFromAddressListsEnabled $true
-    
-    #Remove the session now that we no longer need the exchange module and powershell commands
-    Remove-PSSession -Session $o365session
-}
-
-#Adding the script method to gather the results
-$TempObject | Add-Member -Force -MemberType ScriptMethod -Name GenerateResults -Value {
-    $this.Results = [hashtable]@{
-        ID          = [string]$this.TeamResults.id
-        DisplayName = [string]$this.TeamResults.displayName
-        Description = [string]$this.TeamResults.description
-        Mail        = [string]$this.GroupResults.mail
-        Visibility  = [string]$this.GroupResults.visibility
-        partitionKey = 'TeamsLog'
-        rowKey = $($this.CallbackID)
-        TicketID = $($this.TicketID)
-        Status       = $(
-            #Any needed tests to confirm that the team was successfully created
-            switch ($this) {
-                { [string]::isnullorempty($_.TeamResults) } { [string]"FAILED" }
-                { -not [string]::isnullorempty($_.TeamResults.ID) } { [string]"SUCCESS" }
-                Default { "UNKNOWN" }
-            }
-        )
-    }
-}
+$TempObject.ExportLastObject()
 
 #Generate the new group
+write-host "Generating a new group request via graph api"
 $TempObject.NewGraphGroupRequest()
+
+$TempObject.ExportLastObject()
 
 #Wait for a few moments
 Start-Sleep -Seconds 15
 
 #Generate the new team (from the existing group)
+write-host "Generating a new teams request via graph api"
 $TempObject.NewGraphTeamRequest()
+
+$TempObject.ExportLastObject()
 
 #Wait for a few moments
 Start-Sleep -Seconds 15
 
-#Set the visibility in powershell
-$TempObject.SetVisibilityInPowershell()
+#Set the visibility in powershell (if needed) This can take a very long time as it requires that Exchange has replicated
+switch ($TempObject.TeamType) {
+    { $_ -eq "Public+Team" } {
+        #Do not make any changes to the visibility in the GAL
+        write-host "No changes made to the visibility in the GAL"
+    }
+    { $_ -eq "Private+Team" } {
+        write-host "Using Powershell to hide visibility in the GAL"
+        $TempObject.SetVisibilityInPowershell()
+    }
+    Default {
+        write-host "Unable to determine team type, attempting to hide visibility in the GAL"
+        $TempObject.SetVisibilityInPowershell()
+    }
+}
 
 #Generate the results
+write-host "Gathering a report of the results"
 $TempObject.GenerateResults()
 
 #Adding any logging or error information needed
+write-host "Gathering logging and error information"
 $TempObject.Results | Add-Member -NotePropertyMembers @{
     ErrorCount = $error.Count
     Errors     = $(
@@ -322,9 +104,10 @@ $TempObject.Results | Add-Member -NotePropertyMembers @{
 Write-Host -message "Final Output:"
 Write-Host -message $($TempObject.Results | convertto-json)
 
-Export-Clixml -InputObject $TempObject .\TempObject.cli.xml
+$TempObject.ExportLastObject()
 
 #Writing to the table (for logging purposes)
+write-host "Writing to the Azure Storage Table"
 Push-OutputBinding -Name LoggedTeamsRequests -Value $TempObject.Results
 
 #If the script failed to create a new team, we want this to throw an error
