@@ -12,21 +12,21 @@ Class CustomTeamObject {
     [PSCustomObject]$Results
     [void]NewGraphGroupRequest() {
 
-        
+
         Function convertformat {
             <#
     .SYNOPSIS
     Converts HTML encoding to standard formatting and removes any leading or trailing whitespace
-    
+
     .PARAMETER InputText
     The input text to convert
-    
+
     .EXAMPLE
     PS>$temp = "This+is+a+test%2fexample%0D%0A%0D%0AAnd+it+rocks"
     PS>convertformat -InputText $temp
-    
+
     This is a test/example
-    
+
     And it rocks
     "
     #>
@@ -58,7 +58,7 @@ Class CustomTeamObject {
         }
         #Making the graph query and setting a variable with the ID that was returned in the response
         $Owner = (Invoke-RestMethod @params).value.id
-    
+
         #setting the needed body parameters & converting to JSON format
         $Body = @{
             DisplayName          = $(
@@ -188,7 +188,7 @@ Class CustomTeamObject {
                     )
                 }
             ) | ConvertTo-Json
-            
+
             #PATCH that to the group team via the Graph API and do not output results to console
             $null = Invoke-RestMethod -Uri "https://graph.microsoft.com/beta/groups/$($this.GroupResults.ID)/team" -Authentication Bearer -Token $this.GraphTokenString  -Method "Patch" -ContentType "application/json" -Body $Body
         }
@@ -209,14 +209,14 @@ Class CustomTeamObject {
         #Create the new PSSession and then import it
         $o365session = New-PSSession -configurationname Microsoft.Exchange -connectionuri https://outlook.office365.com/powershell-liveid/ -credential $this.ServiceAccountCredential -authentication basic -allowredirection
         $null = Import-PSSession $o365session -allowclobber -disablenamechecking
-    
+
         if (! [string]::IsNullOrWhiteSpace($(Get-PSSession | Where-Object { $_.configurationname -eq "Microsoft.Exchange" }))) {
             write-host "`tLoaded Exchange Online"
         }
         else {
             ThrowError "Failed to load Exchange Online"
         }
-        
+
         #It can take up to 15 min to replicate, loop checks for the existance of the object and wait until its ready before proceeding
         Write-Host "`tWaiting for replication before proceeding"
         $attempt = $null
@@ -227,15 +227,15 @@ Class CustomTeamObject {
             }
             catch {
                 $LoopCount = $LoopCount + 1
-                Start-Sleep -Seconds 60        
+                Start-Sleep -Seconds 60
             }
         } until ($null -ne $attempt)
-    
+
         Write-Host "`tWaited $LoopCount Minutes for group replication"
-    
+
         #After replication, we want to set the unified group
         Set-UnifiedGroup $this.GroupResults.id -HiddenFromAddressListsEnabled $true
-    
+
         #Remove the session now that we no longer need the exchange module and powershell commands
         Remove-PSSession -Session $o365session
 
@@ -258,12 +258,44 @@ Class CustomTeamObject {
                 }
             )
         }
-    
+
     }
     [void]ExportLastObject() {
+        #Can be used for debugging or manually ran instances of this class
         write-host "Exporting a copy of the last run object to an xml"
         Export-Clixml -InputObject $this .\TempObject.cli.xml
     }
-    [void]Run() { }
+    [void]AutoCreateTeam() {
+        #Generate the new group
+        write-host "Generating a new group request via graph api"
+        $this.NewGraphGroupRequest()
 
+        #Wait for a few moments
+        Start-Sleep -Seconds 5
+
+        #Generate the new team (from the existing group)
+        write-host "Generating a new teams request via graph api"
+        $this.NewGraphTeamRequest()
+
+        #Set the visibility in powershell (if needed) This can take a very long time as it requires that Exchange has replicated
+        switch ($this.TeamType) {
+            { $_ -eq "Public+Team" } {
+                #Do not make any changes to the visibility in the GAL
+                write-host "No changes made to the visibility in the GAL"
+            }
+            { $_ -eq "Private+Team" } {
+                write-host "Using Powershell to hide visibility in the GAL"
+                $this.SetVisibilityInPowershell()
+            }
+            Default {
+                write-host "Unable to determine team type, attempting to hide visibility in the GAL"
+                $this.SetVisibilityInPowershell()
+            }
+        }
+
+        #Generate the results
+        write-host "Gathering a report of the results"
+        $this.GenerateResults()
+
+    }
 }
