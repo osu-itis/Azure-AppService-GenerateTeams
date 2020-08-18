@@ -16,7 +16,7 @@
     },
     {
       "name": "TimedGALChanges",
-      "tableName": "timed-gal-changes",
+      "queuename": "timed-gal-changes",
       "connection": "AzureWebJobsStorage",
       "direction": "out",
       "type": "queue"
