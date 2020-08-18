@@ -7,8 +7,6 @@ if ([string]::IsNullOrEmpty($env:ClientID)) { Throw 'Could not find $env:ClientI
 if ([string]::IsNullOrEmpty($env:ClientSecret)) { Throw 'Could not find $env:ClientSecret' }
 if ([string]::IsNullOrEmpty($env:TenantId)) { Throw 'Could not find $env:TenantId' }
 if ([string]::IsNullOrEmpty($env:CertificateThumbprint)) { Throw 'Could not find $env:CertificateThumbprint' }
-if ([string]::IsNullOrEmpty($env:ServiceAccountUsername)) { Throw 'Could not find $env:ServiceAccountUsername' }
-if ([string]::IsNullOrEmpty($env:ServiceAccountPassword)) { Throw 'Could not find $env:ServiceAccountPassword' }
 
 #Importing all of the needed files:
 . .\QueueTrigger\ClientInfo.ps1
@@ -29,16 +27,6 @@ $TempObject = [CustomTeamObject]@{
     
     #Using the Graph token info
     GraphTokenString         = $ClientInfo.TokenString
-    
-    #Generating the service credential that is needed to make powershell calls
-    ServiceAccountCredential = $(
-        #Using the env variables set in the azure function app, generate a credential object
-        $userName = $env:ServiceAccountUsername
-        $userPassword = $env:ServiceAccountPassword
-        [securestring]$secStringPassword = ConvertTo-SecureString $userPassword -AsPlainText -Force
-        [pscredential]$o365cred = New-Object System.Management.Automation.PSCredential ($userName, $secStringPassword)
-        $o365cred
-    )
 }
 
 # Write out the queue message and insertion time to the information log
@@ -51,6 +39,25 @@ $TempObject.AutoCreateTeam()
 #Converting to Json and pushing out to the host for humans to read
 Write-Host -message "Final Output:"
 Write-Host -message $($TempObject.Results | convertto-json)
+
+
+#Determine if the the visibility in powershell (This can take a very long time as it requires that Exchange has replicated, so the request is processed by a seperate function)
+switch ($TempObject.TeamType) {
+    { $_ -eq "Public" } {
+        #Do not make any changes to the visibility in the GAL
+        Write-Host "No changes made to the visibility in the GAL"
+    }
+    { $_ -eq "Private" } {
+        #Writing the Group ID to the timed-gal-changes storage queue        
+        Write-Host "Writing to the Azure Storage Queue for followup changes on the GAL"
+        Push-OutputBinding -name "TimedGALChanges" -value $TempObject.GroupResults.id
+    }
+    Default {
+        #Writing the Group ID to the timed-gal-changes storage queue        
+        Write-Host "Writing to the Azure Storage Queue for followup changes on the GAL"
+        Push-OutputBinding -name "TimedGALChanges" -value $TempObject.GroupResults.id            
+    }
+}
 
 #Writing to the table (for logging purposes)
 write-host "Writing to the Azure Storage Table"

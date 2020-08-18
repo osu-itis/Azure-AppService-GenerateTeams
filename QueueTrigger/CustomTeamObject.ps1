@@ -180,41 +180,6 @@ Class CustomTeamObject {
         }
 
     }
-    [void]SetVisibilityInPowershell() {
-        #Create the new PSSession and then import it
-        $o365session = New-PSSession -configurationname Microsoft.Exchange -connectionuri https://outlook.office365.com/powershell-liveid/ -credential $this.ServiceAccountCredential -authentication basic -allowredirection
-        $null = Import-PSSession $o365session -allowclobber -disablenamechecking
-
-        if (! [string]::IsNullOrWhiteSpace($(Get-PSSession | Where-Object { $_.configurationname -eq "Microsoft.Exchange" }))) {
-            write-host "`tLoaded Exchange Online"
-        }
-        else {
-            ThrowError "Failed to load Exchange Online"
-        }
-
-        #It can take up to 15 min to replicate, loop checks for the existance of the object and wait until its ready before proceeding
-        Write-Host "`tWaiting for replication before proceeding"
-        $attempt = $null
-        $LoopCount = 0
-        do {
-            try {
-                $attempt = Get-UnifiedGroup $this.GroupResults.id -ErrorAction Stop
-            }
-            catch {
-                $LoopCount = $LoopCount + 1
-                Start-Sleep -Seconds 60
-            }
-        } until ($null -ne $attempt)
-
-        Write-Host "`tWaited $LoopCount Minutes for group replication"
-
-        #After replication, we want to set the unified group
-        Set-UnifiedGroup $this.GroupResults.id -HiddenFromAddressListsEnabled $true
-
-        #Remove the session now that we no longer need the exchange module and powershell commands
-        Remove-PSSession -Session $o365session
-
-    }
     [void]GenerateResults() {
         $this.Results = [hashtable]@{
             ID           = [string]$this.TeamResults.id
@@ -265,22 +230,6 @@ Class CustomTeamObject {
         #Generate the new team (from the existing group)
         write-host "Generating a new teams request via graph api"
         $this.NewGraphTeamRequest()
-
-        #Set the visibility in powershell (if needed) This can take a very long time as it requires that Exchange has replicated
-        switch ($this.TeamType) {
-            { $_ -eq "Public" } {
-                #Do not make any changes to the visibility in the GAL
-                write-host "No changes made to the visibility in the GAL"
-            }
-            { $_ -eq "Private" } {
-                write-host "Using Powershell to hide visibility in the GAL"
-                $this.SetVisibilityInPowershell()
-            }
-            Default {
-                write-host "Unable to determine team type, attempting to hide visibility in the GAL"
-                $this.SetVisibilityInPowershell()
-            }
-        }
 
         #Generate the results
         write-host "Gathering a report of the results"
