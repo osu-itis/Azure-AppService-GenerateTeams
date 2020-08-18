@@ -38,6 +38,7 @@ This repository contains the code used for azure functions allowing a single Res
 
 ## Requirements
 
+- Service (User) Account
 - Azure App Registration
   - Application (client) ID
   - Client Secret
