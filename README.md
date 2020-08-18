@@ -1,6 +1,17 @@
 ---
-Graph API Used: https://graph.microsoft.com/v1.0
-Total Rest Options: Post,Get
+Graph:
+  Endpoint: https://graph.microsoft.com/v1.0
+  Rest Options: Post,Get
+Powershell Compatibility:
+  PS 5.1:
+    Y/N: ✖
+    Notes: Invoke-RestMethod commands are using the newer Authentication parameter, not compatible with 5.1
+  PS 6.2+:
+    Y/N: ✔
+    Notes: N\A
+  PS 7.0+:
+    Y/N: ✔
+    Notes: N\A
 ---
 
 # Generate Teams
@@ -27,6 +38,7 @@ This repository contains the code used for azure functions allowing a single Res
 
 ## Requirements
 
+- Service (User) Account
 - Azure App Registration
   - Application (client) ID
   - Client Secret

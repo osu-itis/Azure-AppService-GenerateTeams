@@ -5,7 +5,10 @@
     "AzureWebJobsStorage": "",
     "ClientID": "",
     "ClientSecret": "",
-    "TenantID": ""
+    "TenantID": "",
+    "CertificateThumbprint": "",
+    "ServiceAccountUsername": "",
+    "ServiceAccountPassword": ""
   },
   "ConnectionStrings": {}
 }
