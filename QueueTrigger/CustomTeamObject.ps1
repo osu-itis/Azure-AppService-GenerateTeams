@@ -105,7 +105,7 @@ Class CustomTeamObject {
             Description          = $this.TeamDescription
             groupTypes           = @([string]"Unified")
             MailEnabled          = [bool]$true
-            MailNickname         =
+            MailNickname         = $this.MailNickname
             securityEnabled      = [bool]$false
             Visibility           = $this.TeamType
             "owners@odata.bind"  = [array]@( $( [string]"https://graph.microsoft.com/v1.0/users/$($this.teamOwner)" ) )
