@@ -1,6 +1,7 @@
 ---
 Graph:
-  Endpoint: https://graph.microsoft.com/v1.0
+  Endpoint: https://graph.microsoft.com/
+  Versions: v1.0, beta
   Rest Options: Post,Get
 Powershell Compatibility:
   PS 5.1:
@@ -35,6 +36,11 @@ This repository contains the code used for azure functions allowing a single Res
     - [Request to generate a new team](#request-to-generate-a-new-team)
     - [Example REST request to trigger the Queue](#example-rest-request-to-trigger-the-queue)
     - [Callback to check the status of the newly created team](#callback-to-check-the-status-of-the-newly-created-team)
+  - [Additional Notes](#additional-notes)
+    - [Graph Settings](#graph-settings)
+    - [Connect-ExchangeOnline](#connect-exchangeonline)
+    - [Team Discovery Settings](#team-discovery-settings)
+      - [Current user based Options for Teams Membership](#current-user-based-options-for-teams-membership)
 
 ## Requirements
 
@@ -181,3 +187,31 @@ GET /api/CheckCallbackID?code=<AZUREFUNCTIONKEY>&CallbackID={
 } HTTP/1.1
 Host: <HOST>
 ```
+
+## Additional Notes
+
+Additional comments regarding Graph, Powershell, Teams Roadmaps, ect...
+
+### Graph Settings
+
+- [TeamDiscoverySettings](https://docs.microsoft.com/en-us/graph/api/resources/teamdiscoverysettings?view=graph-rest-beta) within the Graph API is only available within beta
+  - This includes the "ShowInTeamsSearchAndSuggestions" Graph API setting
+
+### Connect-ExchangeOnline
+
+- [App-only authentication for unattended scripts in the EXO V2 module](https://docs.microsoft.com/en-us/powershell/exchange/app-only-auth-powershell-v2?view=exchange-ps) currently only supports powershell desktop (PS 5.1)
+  - Once this command is compatible with Powershell Core (6.2+, 7.0+) we should remove custom code to connect to exchange and use this method instead
+
+### Team Discovery Settings
+
+- [Discovery of Private teams within MS Teams](https://docs.microsoft.com/en-us/microsoftteams/manage-discovery-of-private-teams#:~:text=When%20a%20private%20team%20is%20discoverable%2C%20it%20shows,owner%20can%20then%20approve%20or%20deny%20the%20request.)
+  - Feature is deprecated as of Aug 31 2020
+    - Cannot enable discovery of Private teams
+    - Cannot disable discovery of Public Teams
+  - Alternate option to consider using policy:
+    - [New-CsTeamsChannelsPolicy](https://docs.microsoft.com/en-us/powershell/module/skype/new-csteamschannelspolicy?view=skype-ps)
+
+#### Current user based Options for Teams Membership
+
+- Options for private teams to allow new members to join directly without approval
+  - [Create and share a code](https://support.microsoft.com/en-us/office/create-a-link-or-a-code-for-joining-a-team-11b0de3b-9288-4cb4-bc49-795e7028296f)
