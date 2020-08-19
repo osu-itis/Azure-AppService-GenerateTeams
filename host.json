@@ -9,9 +9,6 @@
   },
   "logging": {
     "logLevel": {
-      "Function.HTTPTrigger": "Debug",
-      "Function.QueueTrigger": "Debug",
-      "Function.CheckCallbackID": "Debug",
       "default": "Trace"
     }
   }
