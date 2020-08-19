@@ -185,6 +185,7 @@ Class CustomTeamObject {
             ID           = [string]$this.TeamResults.id
             DisplayName  = [string]$this.TeamResults.displayName
             Description  = [string]$this.TeamResults.description
+            Visibility   = [string]$this.TeamType
             Mail         = [string]$this.GroupResults.mail
             partitionKey = 'TeamsLog'
             rowKey       = $($this.CallbackID)
