@@ -34,8 +34,7 @@ This repository contains the code used for azure functions allowing a single Res
   - [REST Examples](#rest-examples)
     - [Example Hostnames](#example-hostnames)
     - [Request to generate a new team](#request-to-generate-a-new-team)
-    - [Example REST request to trigger the Queue](#example-rest-request-to-trigger-the-queue)
-    - [Callback to check the status of the newly created team](#callback-to-check-the-status-of-the-newly-created-team)
+      - [Example response](#example-response)
   - [Additional Notes](#additional-notes)
     - [Graph Settings](#graph-settings)
     - [Connect-ExchangeOnline](#connect-exchangeonline)
@@ -85,14 +84,14 @@ This repository contains the code used for azure functions allowing a single Res
 
 There are a few hardcoded values that need to be set that are based on the configuration of the Azure Storage:
 
-- `CheckCallbackID\run.ps1`
-  - PartitionKey
-  - AzureStorageTableName
-- `HttpTrigger\function.json`
+- `NewTeam\function.json`
   - QueueName
-- `QueueTrigger\function.json`
   - TableName
+- `TimedGalChanges\function.json`
   - QueueName
+- `TimedGalChanges\run.ps1`
+  - QueueName
+  - ResourceGroup
 
 ### TDx configuration
 
@@ -120,16 +119,18 @@ There are a few hardcoded values that need to be set that are based on the confi
 
 ## Workflow and Usage
 
-- `HTTPTrigger` function is triggered via a post request.
-  - This returns a "CallbackID" which can later be used to query the status of the team.
-  - The request is then stored within an azure storage queue.
-- The `QueueTrigger` function is triggered as soon as a new item is created in the queue, the function then processes the new request and makes a Graph request to create a group.
+- `NewTeam` Function is triggered via a post request
   - A new O365 Group is generated and populated with a single member (the owner of the group).
   - The group is then used to create a Microsoft Team via Microsoft Graph.
     - >NOTE: Currently this is best practice, Graph API calls newer 1.* may have a single Graph Request to create a team rather than a two part process.
   - The queue trigger takes a mixture of the Group and Team attributes and posts the results to an azure table (this is both used for checking the status of the new team and as long term storage logs for the requests).
-A new Rest Get request is made (on demand by an application, like TDx) to the `CheckCallbackID` Function, this function takes the provided callback ID and checks the Azure storage table, Returning a 400 response if not found, and a 200 response with the team information if found. This status can be used in TDx to automatically move through a predefined workflow.
-- Shortly after the new team is created, the owner (and one and only member) will be granted access to the team and receive a notification if the teams client is running.
+  - Shortly after the new team is created, the owner (and one and only member) will be granted access to the team and receive a notification if the teams client is running.
+  - A queue message is generated to the storage queue
+- `TimedGALChanges` This function incrementally checks on the storage queue to determine if there are any pending queue messages
+  - If there are pending queue messages
+    - it loads exchange, and attempts to set the visibility of the group in the GAL.
+      - If it succeeds, the queue message is removed from the queue
+      - If not, the queue message will be checked again the next time the function incrementally checks the queue.
 
 ## REST Examples
 
@@ -147,7 +148,7 @@ Port 7071 is currently the default port when using the local azure function apps
 ### Request to generate a new team
 
 ```HTTP REST
-POST /api/HttpTrigger?code=<AZUREFUNCTIONKEY> HTTP/1.1
+POST /api/NewTeam?code=<AZUREFUNCTIONKEY> HTTP/1.1
 Host: <HOST>
 Content-Type: application/json
 
@@ -160,32 +161,20 @@ Content-Type: application/json
 }
 ```
 
-### Example REST request to trigger the Queue
+#### Example response
 
->NOTE: This does not normally need to be done, often its better to trigger the generation of a new team which will in turn trigger this.
-
-```HTTP REST
-POST /admin/functions/QueueTrigger HTTP/1.1
-Host: <HOST>
-Content-Type: application/json
-
+```JSON
 {
-  "Description": "Generated through Queue trigger",
-  "TeamType": "Private+Team",
-  "TeamName": "Some Name",
+  "ID": <GUID-of-new-Team>,
+  "Description": <Description of Team>,
   "TicketID": "00000000",
-  "CallbackID": "<RANDOMLY GENERATED UNIQUE GUID>",
-  "Requestor": "email.address@oregonstate.edu"
+  "Status": "SUCCESS",
+  "rowKey": <Guid of entry in Azure Table Storage>,
+  "Visibility": "Private",
+  "Mail": "<Email.Address>@OregonStateUniversity.onmicrosoft.com",
+  "DisplayName": <Description>,
+  "partitionKey": "TeamsLog"
 }
-```
-
-### Callback to check the status of the newly created team
-
-```HTTP REST
-GET /api/CheckCallbackID?code=<AZUREFUNCTIONKEY>&CallbackID={
-  "CallbackID": "<CALLBACK ID BASED ON PREVIOUS RESPONSE>"
-} HTTP/1.1
-Host: <HOST>
 ```
 
 ## Additional Notes
