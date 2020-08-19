@@ -6,7 +6,6 @@
       "direction": "in",
       "name": "Request",
       "methods": [
-        "get",
         "post"
       ]
     },
@@ -14,6 +13,20 @@
       "type": "http",
       "direction": "out",
       "name": "Response"
+    },
+    {
+      "name": "LoggedTeamsRequests",
+      "tableName": "LoggedTeamsRequests",
+      "connection": "AzureWebJobsStorage",
+      "direction": "out",
+      "type": "table"
+    },
+    {
+      "name": "TimedGALChanges",
+      "queuename": "timed-gal-changes",
+      "connection": "AzureWebJobsStorage",
+      "direction": "out",
+      "type": "queue"
     }
   ]
 }
