@@ -9,11 +9,11 @@ if ([string]::IsNullOrEmpty($env:TenantId)) { Throw 'Could not find $env:TenantI
 if ([string]::IsNullOrEmpty($env:CertificateThumbprint)) { Throw 'Could not find $env:CertificateThumbprint' }
 
 #Importing all of the needed files:
-. .\QueueTrigger\ClientInfo.ps1
+. .\QueueTrigger\GraphAPIToken.ps1
 . .\QueueTrigger\CustomTeamObject.ps1
 
 #Generate the client info so we can make graph API calls
-$ClientInfo = [GraphAPIToken]::new($env:ClientID, $env:ClientSecret, $env:TenantID)
+$GraphAPIToken = [GraphAPIToken]::new($env:ClientID, $env:ClientSecret, $env:TenantID)
 
 #Generate the temporary object that will contain all of our temp variables
 $TempObject = [CustomTeamObject]@{
@@ -26,7 +26,7 @@ $TempObject = [CustomTeamObject]@{
     CallbackID               = $queue.CallbackID
     
     #Using the Graph token info
-    GraphTokenString         = $ClientInfo.TokenString
+    GraphTokenString         = $GraphAPIToken.TokenString
 }
 
 # Write out the queue message and insertion time to the information log
