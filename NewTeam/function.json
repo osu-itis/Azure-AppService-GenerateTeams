@@ -1,11 +1,18 @@
-﻿{
+{
   "bindings": [
     {
-      "name": "Queue",
-      "queueName": "new-teams-requests",
-      "connection": "AzureWebJobsStorage",
+      "authLevel": "function",
+      "type": "httpTrigger",
       "direction": "in",
-      "type": "queueTrigger"
+      "name": "Request",
+      "methods": [
+        "post"
+      ]
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "Response"
     },
     {
       "name": "LoggedTeamsRequests",

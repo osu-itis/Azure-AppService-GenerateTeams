@@ -87,11 +87,10 @@ Class CustomTeamObject {
     }
     [void]GenerateMailNickname() {
         $this.MailNickname = $(
-            #Remove any spaces, remove slashes, and append a unique string to ensure that the MailNickname is unique and convert any character encoding to plain text
-            #Add a randomized string to make it unique, convert any character encoding to plain text and remove any slashes or spaces
+            #Add a randomized string to make it unique, convert any character encoding to plain text and remove any slashes or spaces, finally regex replace any special characters
             try {
                 Add-Type -AssemblyName System.Web
-                $( [System.Web.HttpUtility]::UrlDecode( $this.TeamName.tostring() + [string](Get-Random) ) ).replace(" ", "").replace("/", "").replace("\", "")
+                $( [System.Web.HttpUtility]::UrlDecode( $this.TeamName.tostring() + [string](Get-Random) ) ).replace(" ", "").replace("/", "").replace("\", "") -replace '[^\p{L}\p{Nd}]', ''
             }
             catch {
                 Write-Error -Message "Failed to generate the Mail Nickname" -ErrorAction Stop
@@ -188,7 +187,7 @@ Class CustomTeamObject {
             Visibility   = [string]$this.TeamType
             Mail         = [string]$this.GroupResults.mail
             partitionKey = 'TeamsLog'
-            rowKey       = $($this.CallbackID)
+            rowKey       = $([string](new-guid).guid)
             TicketID     = $($this.TicketID)
             Status       = $(
                 #Any needed tests to confirm that the team was successfully created
