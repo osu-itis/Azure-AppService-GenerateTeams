@@ -9,7 +9,7 @@ if ([string]::IsNullOrEmpty($env:TenantId)) { Throw 'Could not find $env:TenantI
 if ([string]::IsNullOrEmpty($env:CertificateThumbprint)) { Throw 'Could not find $env:CertificateThumbprint' }
 
 #Importing all of the needed files:
-. .\QueueTrigger\GraphAPIToken.ps1
+Import-Module .\Modules\New-GraphAPIToken -Force
 . .\QueueTrigger\CustomTeamObject.ps1
 
 #Generate the client info so we can make graph API calls
