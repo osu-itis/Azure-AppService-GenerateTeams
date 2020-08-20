@@ -123,61 +123,96 @@ Class CustomTeamObject {
 
     }
     [void]NewGraphTeamRequest() {
-        #Setting the needed settings for the team and converting the data to Json for the API call
-        $Body = @{
-            MemberSettings    = @{
-                allowCreatePrivateChannels = $true
-                allowCreateUpdateChannels  = $true
+        $Increment = 0
+        $FailTest = $false
+        do {
+            try {
+                #Setting the needed settings for the team and converting the data to Json for the API call
+                $Body = @{
+                    MemberSettings    = @{
+                        allowCreatePrivateChannels = $true
+                        allowCreateUpdateChannels  = $true
+                    }
+                    MessagingSettings = @{
+                        allowUserEditMessages   = $true
+                        allowUserDeleteMessages = $true
+                    }
+                    FunSettings       = @{
+                        allowGiphy         = $true
+                        giphyContentRating = [string]"Moderate"
+                    }
+                    Visibility        = $this.TeamType
+                } | ConvertTo-Json
+
+                #waiting the recommended amount of time before attempting to use a unified group to create a new team
+                Start-Sleep -Seconds 10
+                $FailTest = $false
+                #Make the PUT request to create the team based on the existing group and do not output results to console
+                $null = Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/groups/$($this.GroupResults.ID)/team" -Authentication Bearer -Token $this.GraphTokenString -Method "Put" -ContentType "application/json" -Body $Body
+    
             }
-            MessagingSettings = @{
-                allowUserEditMessages   = $true
-                allowUserDeleteMessages = $true
+            catch {
+                write-host "Failed to create a new team with the existing group, will try again in a moment..."
+                $FailTest = $true
+                $Increment ++
             }
-            FunSettings       = @{
-                allowGiphy         = $true
-                giphyContentRating = [string]"Moderate"
+        } until (($FailTest -eq $false) -or ($Increment -eq 6))
+
+        if (($FailTest -eq $true) -and ($Increment -eq 6)) {
+            throw "Failed to generate the team off of the existing unified group"
+        }
+
+        do {
+            $Increment = 0
+            $FailTest = $false
+            try {
+                $FailTest = $false
+    
+                #Setting the body of the request to show the team in the search or suggestions based off of the team type
+                $body = $(
+                    @{
+                        ShowInTeamsSearchAndSuggestions = $(
+                            switch ($this.TeamType) {
+                                { $_ -eq "Private" } { $false }
+                                { $_ -eq "Public" } { $true }
+                                Default { $false }
+                            }
+                        )
+                    }
+                ) | ConvertTo-Json
+    
+                #PATCH that to the group team via the Graph API and do not output results to console
+                $null = Invoke-RestMethod -Uri "https://graph.microsoft.com/beta/groups/$($this.GroupResults.ID)/team" -Authentication Bearer -Token $this.GraphTokenString  -Method "Patch" -ContentType "application/json" -Body $Body
             }
-            Visibility        = $this.TeamType
-        } | ConvertTo-Json
+            catch {
+                Write-Host "Failed to Patch the existing Team, will try again in a moment..."
+                $FailTest = $true
+                $Increment ++
+            }
+        } until (($FailTest -eq $false) -or ($Increment -eq 6))
 
-        try {
-            #Make the PUT request to create the team based on the existing group and do not output results to console
-            $null = Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/groups/$($this.GroupResults.ID)/team" -Authentication Bearer -Token $this.GraphTokenString -Method "Put" -ContentType "application/json" -Body $Body
-
-        }
-        catch {
-            Throw "Failed to generate Team using the existing O365 Unified Group "
-        }
-
-        try {
-            #Setting the body of the request to show the team in the search or suggestions based off of the team type
-            $body = $(
-                @{
-                    ShowInTeamsSearchAndSuggestions = $(
-                        switch ($this.TeamType) {
-                            { $_ -eq "Private" } { $false }
-                            { $_ -eq "Public" } { $true }
-                            Default { $false }
-                        }
-                    )
-                }
-            ) | ConvertTo-Json
-
-            #PATCH that to the group team via the Graph API and do not output results to console
-            $null = Invoke-RestMethod -Uri "https://graph.microsoft.com/beta/groups/$($this.GroupResults.ID)/team" -Authentication Bearer -Token $this.GraphTokenString  -Method "Patch" -ContentType "application/json" -Body $Body
-        }
-        catch {
+        if (($FailTest -eq $true) -and ($Increment -eq 6)) {
             throw "Failed to Patch the existing Team"
         }
 
-        try {
-            #Gathering the current settings of the Team and setting those to our TeamsResults attribute for later
-            $this.TeamResults = Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/groups/$($this.GroupResults.ID)/team" -Authentication Bearer -Token $this.GraphTokenString -Method "Get"
-        }
-        catch {
-            Throw "Failed to gather the team information"
-        }
+        $Increment = 0
+        $FailTest = $false
+        do {
+            $FailTest = $false
+            try {
+                #Gathering the current settings of the Team and setting those to our TeamsResults attribute for later
+                $this.TeamResults = Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/groups/$($this.GroupResults.ID)/team" -Authentication Bearer -Token $this.GraphTokenString -Method "Get"
+            }
+            catch {
+                Write-Host "Failed to gather the team information, will try again in a moment..."
+                $FailTest = $true
+                $Increment ++
+            }
+        } until (($FailTest -eq $false) -or ($Increment -eq 6))
 
+        if (($FailTest -eq $true) -and ($Increment -eq 6)) {
+            throw "Failed to gather the team information"
+        }
     }
     [void]GenerateResults() {
         $this.Results = [hashtable]@{
@@ -225,7 +260,7 @@ Class CustomTeamObject {
         $this.NewGraphGroupRequest()
 
         #Wait for a few moments
-        Start-Sleep -Seconds 5
+        Start-Sleep -Seconds 10
 
         #Generate the new team (from the existing group)
         write-host "Generating a new teams request via graph api"
