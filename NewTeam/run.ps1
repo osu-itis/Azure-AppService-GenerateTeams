@@ -3,9 +3,6 @@ using namespace System.Net
 # Input bindings are passed in via param block.
 param($Request, $TriggerMetadata)
 
-#  Export-Clixml -Path .\NewTeamRequest.cli.xml -InputObject $Request
-#  $Request = Import-Clixml -Path .\NewTeamRequest.cli.xml
-
 # Write to the Azure Functions log stream.
 Write-Host "PowerShell HTTP trigger function processed a request."
 
@@ -44,7 +41,6 @@ $TempObject = [CustomTeamObject]@{
 
 # Write out the queue message and insertion time to the information log
 Write-Host "PowerShell queue trigger function processed work item: $($Queue |convertto-json )"
-Write-Host "Queue item insertion time: $($TriggerMetadata.InsertionTime)"
 
 #Generating the new team using the custom class that contains the needed methods
 $TempObject.AutoCreateTeam()
