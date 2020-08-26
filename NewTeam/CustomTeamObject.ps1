@@ -1,5 +1,5 @@
 Class CustomTeamObject {
-    #Basic attributes
+    # Basic attributes
     [String]$TeamDescription
     [String]$TeamType
     [String]$TeamName
@@ -7,20 +7,20 @@ Class CustomTeamObject {
     [String]$Requestor
     [String]$CallbackID
 
-    #Credentials that needed to run methods
+    # Credentials that are needed to run methods
     [securestring]$GraphTokenString
     [pscredential]$ServiceAccountCredential
 
-    #Attribues that will store calculated values
+    # Attribues that will store calculated values
     [string]$TeamOwner
     [string]$MailNickname
 
-    #Attributes that contain the results of GRAPH API calls
+    # Attributes that contain the results of GRAPH API calls
     [PSCustomObject]$GroupResults
     [PSCustomObject]$TeamResults
     [PSCustomObject]$Results
 
-    #Custom Methods
+    # Custom Methods
     [void]CleanAttributes() {
         Function convertformat {
             <#
@@ -54,7 +54,7 @@ Class CustomTeamObject {
             Return $OutputText
         }
 
-        #Processing the attributes
+        # Processing the attributes
         $this.TeamDescription = convertformat -InputText $( $this.TeamDescription )
         $this.TeamType = $(
             switch ($this.TeamType) {
@@ -67,17 +67,17 @@ Class CustomTeamObject {
 
     }
     [void]ResolveTeamOwner() {
-        #Get the Owner ID based on the email address that was provided
-        #Generating the params that are needed for the query
+        # Get the Owner ID based on the email address that was provided
+        # Generating the params that are needed for the query
         $params = @{
-            #This formatting is intentional, the $filter needs to be single quoted due to the dollarsign, the single quotes need to be double quoted and the variables should not be single quoted so they are evaluated properly
-            #Example of the output: https://graph.microsoft.com/v1.0/users/?$filter=mail eq 'email.address@oregonstate.edu' or userprincipalname eq 'email.address@oregonstate.edu'
+            # This formatting is intentional, the $filter needs to be single quoted due to the dollarsign, the single quotes need to be double quoted and the variables should not be single quoted so they are evaluated properly
+            # Example of the output: https://graph.microsoft.com/v1.0/users/?$filter=mail eq 'email.address@oregonstate.edu' or userprincipalname eq 'email.address@oregonstate.edu'
             Uri            = "https://graph.microsoft.com/v1.0/users/" + '?$filter=mail eq' + " '" + $($this.Requestor) + "' " + 'or userprincipalname eq' + " '" + $($this.Requestor) + "' "
             Authentication = "Bearer"
             Token          = $this.GraphTokenString
             Method         = "Get"
         }
-        #Making the graph query and setting a variable with the ID that was returned in the response
+        # Making the graph query and setting a variable with the ID that was returned in the response
         try {
             $this.TeamOwner = (Invoke-RestMethod @params).value.id
         }
@@ -87,7 +87,7 @@ Class CustomTeamObject {
     }
     [void]GenerateMailNickname() {
         $this.MailNickname = $(
-            #Add a randomized string to make it unique, convert any character encoding to plain text and remove any slashes or spaces, finally regex replace any special characters
+            # Add a randomized string to make it unique, convert any character encoding to plain text and remove any slashes or spaces, finally regex replace any special characters
             try {
                 Add-Type -AssemblyName System.Web
                 $( [System.Web.HttpUtility]::UrlDecode( $this.TeamName.tostring() + [string](Get-Random) ) ).replace(" ", "").replace("/", "").replace("\", "") -replace '[^\p{L}\p{Nd}]', ''
@@ -98,7 +98,7 @@ Class CustomTeamObject {
         )
     }
     [void]NewGraphGroupRequest() {
-        #Setting the needed body parameters & converting to JSON format
+        # Setting the needed body parameters & converting to JSON format
         $Body = @{
             DisplayName          = $this.TeamName
             Description          = $this.TeamDescription
@@ -111,7 +111,7 @@ Class CustomTeamObject {
             "Members@odata.bind" = [array]@( $( [string]"https://graph.microsoft.com/v1.0/users/$($this.TeamOwner)" ) )
         } | ConvertTo-Json
 
-        #Making a graph request for a new group
+        # Making a graph request for a new group
         try {
             $this.GroupResults = $(
                 Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/groups" -Authentication Bearer -Token $this.GraphTokenString -Method "Post" -ContentType "application/json" -Body $Body
@@ -127,7 +127,7 @@ Class CustomTeamObject {
         $FailTest = $false
         do {
             try {
-                #Setting the needed settings for the team and converting the data to Json for the API call
+                # Setting the needed settings for the team and converting the data to Json for the API call
                 $Body = @{
                     MemberSettings    = @{
                         allowCreatePrivateChannels = $true
@@ -144,10 +144,10 @@ Class CustomTeamObject {
                     Visibility        = $this.TeamType
                 } | ConvertTo-Json
 
-                #waiting the recommended amount of time before attempting to use a unified group to create a new team
+                # Waiting the recommended amount of time before attempting to use a unified group to create a new team
                 Start-Sleep -Seconds 10
                 $FailTest = $false
-                #Make the PUT request to create the team based on the existing group and do not output results to console
+                # Make the PUT request to create the team based on the existing group and do not output results to console
                 $null = Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/groups/$($this.GroupResults.ID)/team" -Authentication Bearer -Token $this.GraphTokenString -Method "Put" -ContentType "application/json" -Body $Body
     
             }
@@ -168,7 +168,7 @@ Class CustomTeamObject {
             try {
                 $FailTest = $false
     
-                #Setting the body of the request to show the team in the search or suggestions based off of the team type
+                # Setting the body of the request to show the team in the search or suggestions based off of the team type
                 $body = $(
                     @{
                         ShowInTeamsSearchAndSuggestions = $(
@@ -181,7 +181,7 @@ Class CustomTeamObject {
                     }
                 ) | ConvertTo-Json
     
-                #PATCH that to the group team via the Graph API and do not output results to console
+                # PATCH that to the group team via the Graph API and do not output results to console
                 $null = Invoke-RestMethod -Uri "https://graph.microsoft.com/beta/groups/$($this.GroupResults.ID)/team" -Authentication Bearer -Token $this.GraphTokenString  -Method "Patch" -ContentType "application/json" -Body $Body
             }
             catch {
@@ -200,7 +200,7 @@ Class CustomTeamObject {
         do {
             $FailTest = $false
             try {
-                #Gathering the current settings of the Team and setting those to our TeamsResults attribute for later
+                # Gathering the current settings of the Team and setting those to our TeamsResults attribute for later
                 $this.TeamResults = Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/groups/$($this.GroupResults.ID)/team" -Authentication Bearer -Token $this.GraphTokenString -Method "Get"
             }
             catch {
@@ -225,7 +225,7 @@ Class CustomTeamObject {
             rowKey       = $([string](new-guid).guid)
             TicketID     = $($this.TicketID)
             Status       = $(
-                #Any needed tests to confirm that the team was successfully created
+                # Any needed tests to confirm that the team was successfully created
                 switch ($this) {
                     { [string]::isnullorempty($_.TeamResults) } { [string]"FAILED" }
                     { -not [string]::isnullorempty($_.TeamResults.ID) } { [string]"SUCCESS" }
@@ -233,40 +233,39 @@ Class CustomTeamObject {
                 }
             )
         }
-
     }
     [void]ExportLastObject() {
-        #Can be used for debugging or manually ran instances of this class
+        # Can be used for debugging or manually ran instances of this class
         write-host "Exporting a copy of the last run object to an xml"
         Export-Clixml -InputObject $this .\TempObject.cli.xml
     }
 
-    #This particular method uses all of the other methods in order to generate a new Microsoft Team automatically
+    # This particular method uses all of the other methods in order to generate a new Microsoft Team automatically
     [void]AutoCreateTeam() {
-        #Start by cleaning attributes as needed
+        # Start by cleaning attributes as needed
         Write-Host "Cleaning attributes"
         $this.CleanAttributes()
 
-        #Resolve the Team Owner (based on the ID that will be used in graph requests)
+        # Resolve the Team Owner (based on the ID that will be used in graph requests)
         Write-Host "Resolving Team Owner"
         $this.ResolveTeamOwner()
 
-        #Generate the new mail nickname
+        # Generate the new mail nickname
         Write-Host "Generating a unique mail nick name"
         $this.GenerateMailNickname()
 
-        #Generate the new group
+        # Generate the new group
         write-host "Generating a new group request via graph api"
         $this.NewGraphGroupRequest()
 
-        #Wait for a few moments
+        # Wait for a few moments
         Start-Sleep -Seconds 10
 
-        #Generate the new team (from the existing group)
+        # Generate the new team (from the existing group)
         write-host "Generating a new teams request via graph api"
         $this.NewGraphTeamRequest()
 
-        #Generate the results
+        # Generate the results
         write-host "Gathering a report of the results"
         $this.GenerateResults()
     }

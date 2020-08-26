@@ -1,3 +1,8 @@
+<# The entire custom GraphAPIToken class is wrapped within a function, this is for two reasons:
+        1. The function both defines and instanciates a new instance of the class
+        2. Classes are not imported from modules, but functions are. This benefits us by allowing us to import this module in other scripts
+#>
+
 function New-GraphAPIToken {
     <#
     .SYNOPSIS
@@ -29,7 +34,7 @@ function New-GraphAPIToken {
         [parameter(Mandatory = $true)]$TenantID
     )
 
-    #Using a class for its strong typing and methods
+    # Using a class for its strong typing and methods
     Class GraphAPIToken {
         [string]$ClientID
         [string]$ClientSecret
@@ -49,13 +54,13 @@ function New-GraphAPIToken {
                 }
                 $this.OAuthReq = $(Invoke-RestMethod -Method Post -Uri "https://login.microsoftonline.com/$($this.TenantId)/oauth2/v2.0/token" -Body $Body)
             }
-            #If this fails out, stop everything, nothing will work without that token
+            # If this fails out, stop everything, nothing will work without that token
             catch {
                 write-error -message $Error[0].Exception -ErrorAction Stop
             }
         }
         [void]GenerateHeaders() {
-            #Creating the headers in for format of 'Bearer <TOKEN>', this will be needed for all future requests
+            # Creating the headers in for format of 'Bearer <TOKEN>', this will be needed for all future requests
             $this.Headers = @{
                 Authorization = "$($this.OAuthReq.token_type) $($this.OAuthReq.access_token))"
             }
@@ -65,24 +70,24 @@ function New-GraphAPIToken {
         }
 
 
-        # Custom Constructor:
+        # Custom Constructor for generating the class:
         GraphAPIToken (
             [string]$ClientID,
             [string]$ClientSecret,
             [string]$TenantID
         ) {
-            #Setting variables
+            # Setting variables
             $this.ClientID = $ClientID
             $this.ClientSecret = $ClientSecret
             $this.TenantID = $TenantID
 
-            # #Running needed methods
+            # Running needed methods
             $this.NewOAuthRequest()
             $this.GenerateHeaders()
             $this.GenerateTokenString()
         }
     }
 
-    #InstanOutputting the new graph token object
+    # Outputting the new graph token object
     [GraphAPIToken]::new($ClientID, $ClientSecret, $TenantID)
 }
