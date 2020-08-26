@@ -17,7 +17,7 @@ Powershell Compatibility:
 
 # Generate Teams
 
-This repository contains the code used for azure functions allowing a single Rest Post request to generate a new Microsoft Teams team based off of the information provided. This was originally created for use with TDx Web Request features to automate our workflows when creating Microsoft Teams
+This repository contains the code used for azure functions allowing a single Rest Post request to generate a new Microsoft Teams team based off of the information provided. This was originally created for use with TDx Web Request features to automate our workflows when creating Microsoft Teams.
 
 ## Table Of Contents
 
@@ -32,7 +32,7 @@ This repository contains the code used for azure functions allowing a single Res
       - [Web Service Provider](#web-service-provider)
   - [Workflow and Usage](#workflow-and-usage)
   - [REST Examples](#rest-examples)
-    - [Example Hostnames](#example-hostnames)
+    - [Example Hostname](#example-hostname)
     - [Request to generate a new team](#request-to-generate-a-new-team)
       - [Example response](#example-response)
   - [Additional Notes](#additional-notes)
@@ -69,20 +69,20 @@ This repository contains the code used for azure functions allowing a single Res
   - Set the proper Graph permissions (listed in the requirement section)
   - Make note of the Application (client) ID
     - Generate a new client secret (description does not matter)
-    - > NOTE: Make note of the new client secret, you will not be able to view it later, if lost, a new client secret needs to be generated
-  - > NOTE: The name of the App Registration will be visible when the team is created and the requestor is invited, Teams uses the name of the app registration for the notification and invite displayed in Microsoft Teams
+    - > NOTE: Make note of the new client secret, you will not be able to view it later, if lost, a new client secret needs to be generated.
+  - > NOTE: The name of the App Registration will be visible when the team is created and the requestor is invited, Teams uses the name of the app registration for the notification and invites displayed in Microsoft Teams.
 - Create a new Azure Resource Group, this will be used to "store" all of the additional components
 - Create an azure storage account
   - Create a new Azure Storage Queue and Table
     - Make note of both the Queue and Table name, they will be needed later
 - Create a new App Service
-  - The code from this Repo can be cloned down from git or use an SFTP transfer to the app service.
+  - The code from this Repo can be cloned down from git or use an SFTP transfer the file to the app service.
   - >NOTE: Review the `local.settings.json.template` "values" section for a list of attributes that will need to exist in the "application settings and configuration" in the app service (set these using the Azure Portal GUI).
 - Review the hardcoded values section below and ensure that those entries are updated to match the current Azure storage.
 
 ### Hardcoded Script Values
 
-There are a few hardcoded values that need to be set that are based on the configuration of the Azure Storage:
+There are a few hardcoded values that are based on the configuration of the Azure Storage, These must match the name of their respective Azure Queue, Table, or Resource Group. Casing is very important for these values.
 
 - `NewTeam\function.json`
   - QueueName
@@ -120,21 +120,21 @@ There are a few hardcoded values that need to be set that are based on the confi
 ## Workflow and Usage
 
 - `NewTeam` Function is triggered via a post request
-  - A new O365 Group is generated and populated with a single member (the owner of the group).
-  - The group is then used to create a Microsoft Team via Microsoft Graph.
+  - A new O365 Group is generated and populated with a single member (the owner of the group)
+  - The group is then used to create a Microsoft Team via Microsoft Graph
     - >NOTE: Currently this is best practice, Graph API calls newer 1.* may have a single Graph Request to create a team rather than a two part process.
-  - The queue trigger takes a mixture of the Group and Team attributes and posts the results to an azure table (this is both used for checking the status of the new team and as long term storage logs for the requests).
-  - Shortly after the new team is created, the owner (and one and only member) will be granted access to the team and receive a notification if the teams client is running.
+  - This function takes a mixture of the Group and Team attributes and posts the results to the azure table for long term logging
+  - Shortly after the new team is created, the owner (the one and only member) will be granted access to the team and receive a notification if their teams client is running
   - A queue message is generated to the storage queue
-- `TimedGALChanges` This function incrementally checks on the storage queue to determine if there are any pending queue messages
-  - If there are pending queue messages
-    - it loads exchange, and attempts to set the visibility of the group in the GAL.
-      - If it succeeds, the queue message is removed from the queue
-      - If not, the queue message will be checked again the next time the function incrementally checks the queue.
+- `TimedGALChanges` This function incrementally checks the storage queue to determine if there are any pending queue messages
+  - If there are pending queue messages:
+    - The function loads exchange, and attempts to set the visibility of the group in the GAL
+      - If the function succeeds, the queue message is removed from the queue
+      - If the function does not succeed, the queue message will be checked again the next time the function incrementally checks the queue
 
 ## REST Examples
 
-### Example Hostnames
+### Example Hostname
 
 ```text
 The name is based off of whatever the Azure Function App Service name is:
