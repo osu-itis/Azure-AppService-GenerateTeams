@@ -94,9 +94,11 @@ Class CustomTeamObject {
                 $RandString = [string](Get-Random)
 
                 # Mail Nickname has a maximum length of 64 characters, we'll start shortening the nickname until its within the limit (without modifying our random string, to ensure that it's still a unique value)
-                do {
-                    $TruncateTest = $TruncateTest.Substring(0,$TruncateTest.Length-1)
-                } until (($TruncateTest+$RandString|Measure-Object -Character).characters -lt 64)
+                if (($TruncateTest+$RandString|Measure-Object -Character).characters -ge 64){
+                    do {
+                        $TruncateTest = $TruncateTest.Substring(0,$TruncateTest.Length-1)
+                    } until (($TruncateTest+$RandString|Measure-Object -Character).characters -lt 64)
+                }
 
                 # Output the result
                 $TruncateTest+$RandString
