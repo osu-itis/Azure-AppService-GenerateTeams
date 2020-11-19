@@ -225,6 +225,9 @@ Class CustomTeamObject {
             throw "Failed to gather the team information"
         }
     }
+    [void]DisableAddingGuests() {
+        
+    }
     [void]GenerateResults() {
         $this.Results = [hashtable]@{
             ID           = [string]$this.TeamResults.id
