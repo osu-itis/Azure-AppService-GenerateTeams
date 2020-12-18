@@ -4,7 +4,14 @@
       "name": "Timer",
       "type": "timerTrigger",
       "direction": "in",
-      "schedule": "0 * * * * *"
+      "schedule": "0 0 * * * *"
+    },
+    {
+      "type": "table",
+      "direction": "out",
+      "name": "outputTable",
+      "tableName": "TeamsManagement",
+      "connection": "AzureWebJobsStorage"
     }
   ]
 }

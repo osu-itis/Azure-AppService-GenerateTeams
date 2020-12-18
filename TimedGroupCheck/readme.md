@@ -1,11 +1,19 @@
-# TimerTrigger - PowerShell
+# Timed Group Check
 
-The `TimerTrigger` makes it incredibly easy to have your functions executed on a schedule. This sample demonstrates a simple use case of calling your function every 5 minutes.
+## About
 
-## How it works
+- Gathers all Teams in our organization and adds information about them into an Azure table, this is used for managing and tracking our Teams.
+- Teams can have one of the following Partition Keys:
+  - **KnownTeams**
+    - Teams that have been auto-added to the list and should be treated as a normal team.
+  - **ExemptTeams**
+    - Teams that have been manually added to the Exempt list and will most likely not have our expected settings.
+    - If a team has been added with both the `ExemptTeams` and the `KnownTeams` partition, the duplicate `KnownTeams` will be auto removed.
 
-For a `TimerTrigger` to work, you provide a schedule in the form of a [cron expression](https://en.wikipedia.org/wiki/Cron#CRON_expression)(See the link for full details). A cron expression is a string with 6 separate expressions which represent a given schedule via patterns. The pattern we use to represent every 5 minutes is `0 */5 * * * *`. This, in plain text, means: "When seconds is equal to 0, minutes is divisible by 5, for any hour, day of the month, month, day of the week, or year".
+## Requirements
 
-## Learn more
+- This function requires the `MSAL.PS` module which is currently not part of microsoft's default modules that can be auto imported with the `requirements.psd1` file. Because of this, A copy needs to be manually added to `TimedGroupCheck\modules\MSAL.PS\`.
 
-<TODO> Documentation
+## Use
+
+- This function is automatically ran via a timer trigger and does not need to be manually called.

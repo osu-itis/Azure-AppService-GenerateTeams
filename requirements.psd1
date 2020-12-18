@@ -9,5 +9,4 @@
     'Az.Storage'     = '2.*'
     'Az.Resources'   = '2.*'
     'AzTable'        = '2.*'
-    'MSAL.PS'        = '4.*'
 }
