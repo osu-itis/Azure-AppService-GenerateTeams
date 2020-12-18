@@ -8,7 +8,10 @@
     "TenantID": "",
     "CertificateThumbprint": "",
     "ServiceAccountUsername": "",
-    "ServiceAccountPassword": ""
+    "ServiceAccountPassword": "",
+    "AzureWebJobs.NewTeam.Disabled": "false",
+    "AzureWebJobs.TimedGalChanges.Disabled": "false",
+    "AzureWebJobs.TimedGroupCheck.Disabled": "false"
   },
   "ConnectionStrings": {}
 }
