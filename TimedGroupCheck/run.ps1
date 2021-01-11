@@ -111,7 +111,7 @@ if ($NewTeams.count -gt 0) {
     }
 }
 
-# Find and conflicts where a team is both in the known and the exempt list
+# Find any conflicts where a team is both in the known and the exempt list
 $ExemptionConflicts = [array]@()
 $ExemptionConflicts += $KnownTeams | Where-Object { $ExemptTeams.ID -contains $_.ID }
 
@@ -126,7 +126,7 @@ if ($ExemptionConflicts.count -gt 0) {
         $RowToDelete = Get-AzTableRow -Table $cloudTable -CustomFilter $finalFilter
         try {
             # Attempt to remove the duplicate entry
-            Write-Output "Removing entry from $($item.PartitionKey) for $($item.DisplayName) ($($item.ID))"
+            Write-Output "Removing duplicate entry from $($item.PartitionKey) for $($item.DisplayName) ($($item.ID))"
             $null = $RowToDelete | Remove-AzTableRow -Table $cloudTable
         }
         catch {
