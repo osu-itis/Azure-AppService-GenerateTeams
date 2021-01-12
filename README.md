@@ -25,6 +25,7 @@ This repository contains the code used for azure functions allowing a single Res
   - [Table Of Contents](#table-of-contents)
   - [Requirements](#requirements)
   - [Setup](#setup)
+    - [Required Modules](#required-modules)
     - [Hardcoded Script Values](#hardcoded-script-values)
     - [TDx configuration](#tdx-configuration)
       - [TDx User account permission](#tdx-user-account-permission)
@@ -80,6 +81,10 @@ This repository contains the code used for azure functions allowing a single Res
   - >NOTE: Review the `local.settings.json.template` "values" section for a list of attributes that will need to exist in the "application settings and configuration" in the app service (set these using the Azure Portal GUI).
 - Review the hardcoded values section below and ensure that those entries are updated to match the current Azure storage.
 
+### Required Modules
+
+The `MSAL.PS` module must be cached to `.\TimedGroupCheck\modules\MSAL.PS`, This is **not** a module that is available from Azure and is **not** committed to the repository. The TimedGroupCheck function will fail and throw an error without this module.
+
 ### Hardcoded Script Values
 
 There are a few hardcoded values that are based on the configuration of the Azure Storage, These must match the name of their respective Azure Queue, Table, or Resource Group. Casing is very important for these values.
@@ -89,6 +94,8 @@ There are a few hardcoded values that are based on the configuration of the Azur
   - TableName
 - `TimedGalChanges\function.json`
   - QueueName
+- `TimedGroupCheck\function.json`
+  - TableName
 - `TimedGalChanges\run.ps1`
   - QueueName
   - ResourceGroup
