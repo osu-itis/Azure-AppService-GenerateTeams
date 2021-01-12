@@ -15,7 +15,7 @@ Write-Host "PowerShell timer trigger function ran! TIME: $currentUTCtime"
 # Attempting to import the needed Modules
 try {
     Write-Output "Importing the MSAL.PS module"
-    Import-Module .\TimedGroupCheck\modules\MSAL.PS\4.21.0.1\MSAL.PS.psd1
+    Import-Module .\Modules\MSAL.PS\4.21.0.1\MSAL.PS.psd1
 }
 catch {
     Throw 'Failed to import the MSAL.PS Module'
