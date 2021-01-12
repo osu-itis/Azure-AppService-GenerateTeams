@@ -1,8 +1,8 @@
-# Timed Group Check
+# SetExemptStatus
 
 ## About
 
-- Gathers all Teams in our organization and adds information about them into an Azure table, this is used for managing and tracking our Teams.
+- This function is used to enable or disable the exception status for a team
 
 ## Requirements
 
@@ -10,4 +10,5 @@
 
 ## Use
 
-- This function is automatically ran via a timer trigger and does not need to be manually called.
+- This function is triggered via API call
+  - Review the `sample.dat` file for an example body in a POST request
