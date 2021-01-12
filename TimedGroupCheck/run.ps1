@@ -83,13 +83,12 @@ $cloudTable = (Get-AzStorageTable –Name $tableName –Context $ctx).CloudTable
 # Gathering the known and exempt teams, starting with empty arrays
 $KnownTeams = [array]@()
 $ExemptTeams = [array]@()
-
 $KnownTeams += Get-AzTableRow -table $cloudTable -partitionKey 'KnownTeams'
-$ExemptTeams += Get-AzTableRow -table $cloudTable -partitionKey 'ExemptTeams'
-Write-Output "Pulled previous information, $($KnownTeams.count) KnownTeams and $($ExemptTeams.count) ExemptTeams"
+$ExemptTeams += Get-AzTableRow -Table $cloudTable -CustomFilter "(Exempt eq true)"
+Write-Output "Pulled previous information, $($KnownTeams.count) TOTAL KnownTeams, $($ExemptTeams.count) ExemptTeams"
 
 # Determining the new teams to be added to the list
-$NewTeams = ($FilteredResults | Where-Object { ($KnownTeams.ID -notcontains $_.ID) -and ($ExemptTeams.ID -notcontains $_.ID) })
+$NewTeams = ($FilteredResults | Where-Object { ($KnownTeams.ID -notcontains $_.ID) })
 
 if ($NewTeams.count -gt 0) {
     Write-Output "Found $($NewTeams.count) new teams:"
@@ -99,7 +98,7 @@ if ($NewTeams.count -gt 0) {
 
     # Adding the partition and rowkey information, additionally only selecting some of the properties
     $output = foreach ($item in $NewTeams) {
-        $item | Select-Object @{Name = 'PartitionKey'; Expression = { "KnownTeams" } }, @{Name = 'RowKey'; Expression = { $_.id } }, id, displayName, description, mail, mailEnabled, mailNickname, createdDateTime, renewedDateTime, expirationDateTime, securityIdentifier, visibility
+        $item | Select-Object @{Name = 'PartitionKey'; Expression = { "KnownTeams" } }, @{Name = 'RowKey'; Expression = { $_.id } }, @{Name = 'Exempt'; Expression = { $false } }, id, displayName, description, mail, mailEnabled, mailNickname, createdDateTime, renewedDateTime, expirationDateTime, securityIdentifier, visibility
     }
 
     try {
@@ -108,29 +107,5 @@ if ($NewTeams.count -gt 0) {
     }
     catch {
         throw "Failed to update the Teams to the table"
-    }
-}
-
-# Find any conflicts where a team is both in the known and the exempt list
-$ExemptionConflicts = [array]@()
-$ExemptionConflicts += $KnownTeams | Where-Object { $ExemptTeams.ID -contains $_.ID }
-
-# If there are any exemption conflicts...
-if ($ExemptionConflicts.count -gt 0) {
-    Write-Warning -Message "Teams were found that should have an exemption"
-    foreach ($item in $ExemptionConflicts) {
-        # Filter for KnownTeams, with a matching ID, and remove it from the table.
-        [string]$filter1 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("PartitionKey", [Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal, "KnownTeams")
-        [string]$filter2 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("id", [Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal, $($item.ID.tostring()))
-        [string]$finalFilter = [Microsoft.Azure.Cosmos.Table.TableQuery]::CombineFilters($filter1, "and", $filter2)
-        $RowToDelete = Get-AzTableRow -Table $cloudTable -CustomFilter $finalFilter
-        try {
-            # Attempt to remove the duplicate entry
-            Write-Output "Removing duplicate entry from $($item.PartitionKey) for $($item.DisplayName) ($($item.ID))"
-            $null = $RowToDelete | Remove-AzTableRow -Table $cloudTable
-        }
-        catch {
-            Write-Error "Could not remove entry from $($item.PartitionKey) for $($item.DisplayName) ($($item.ID))"
-        }
     }
 }
