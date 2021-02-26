@@ -25,9 +25,9 @@ $Exempt = $(
 # Attempting to import the needed Modules
 try {
     Write-Output "Importing the MSAL.PS module"
-    Import-Module .\modules\MSAL.PS\4.21.0.1\MSAL.PS.psd1 -Force
+    Import-Module .\modules\MSAL.PS\4.21.0.1\MSAL.PS.psd1 -Force -ErrorAction stop
     Write-Output "Importing the 'CustomToolkit' module"
-    Import-Module .\Modules\CustomToolkit\CustomToolkit.psm1 -Force
+    Import-Module .\Modules\CustomToolkit\CustomToolkit.psm1 -Force -ErrorAction stop
 }
 catch {
     Throw 'Failed to import the required modules'
