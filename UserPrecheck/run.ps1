@@ -81,7 +81,7 @@ if ($Request.Body.user)
             Push-OutputBinding -Name Response -Value (
                 [HttpResponseContext]@{
                     StatusCode = [HttpStatusCode]::BadRequest
-                    Body = "User with the value $($request.body.user) is not licenced."
+                    Body = "User with the value $($request.body.user) is not licenced for teams."
                 })
         }
     }
