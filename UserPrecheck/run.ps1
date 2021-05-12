@@ -6,6 +6,9 @@ param($Request, $TriggerMetadata)
 # Write to the Azure Functions log stream.
 Write-Host "PowerShell HTTP trigger function processed a request."
 
+Write-Output "Ticket: $($Request.query.ticket)"
+Write-Output "User: $($Request.query.user)"
+
 # Attempting to import the needed Modules
 try
 {
