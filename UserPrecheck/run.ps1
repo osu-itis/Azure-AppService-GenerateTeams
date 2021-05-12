@@ -54,6 +54,7 @@ if ($Request.Body.user)
     }
     
     if ($results.value.serviceplans -eq $null) {
+        Write-Output "Responding with bad request, user could not be found"
         Push-OutputBinding -Name Response -Value (
             [HttpResponseContext]@{
                 StatusCode = [HttpStatusCode]::BadRequest
@@ -69,7 +70,7 @@ if ($Request.Body.user)
         $body = $tempBody|ConvertTo-Json
         
         if ($tempBody.TeamsEnabled -eq "Success") {
-            # Associate values to output bindings by calling 'Push-OutputBinding'.
+            Write-Output "Responding with good request, user is licenced for teams"
             Push-OutputBinding -Name Response -Value (
                 [HttpResponseContext]@{
                     StatusCode = [HttpStatusCode]::OK
@@ -77,7 +78,7 @@ if ($Request.Body.user)
                 })
         }
         else {
-            # Associate values to output bindings by calling 'Push-OutputBinding'.
+            Write-Output "Responding with bad request, user does not have a licence for teams"
             Push-OutputBinding -Name Response -Value (
                 [HttpResponseContext]@{
                     StatusCode = [HttpStatusCode]::BadRequest
@@ -88,15 +89,10 @@ if ($Request.Body.user)
     
 } else
 {
+    Write-Output "Responding with bad request, request was not correctly formatted"
     Push-OutputBinding -Name Response -Value (
         [HttpResponseContext]@{
             StatusCode = [HttpStatusCode]::BadRequest
             Body = "Request was not correctly formatted."
         })
 }
-
-
-
-
-
-
