@@ -40,6 +40,17 @@ $token = Get-MsalToken -ClientId $env:ClientID -ClientSecret $(ConvertTo-SecureS
 # Setting the headers as a variable for convienience
 $Headers = @{Authorization = "Bearer $($token.AccessToken)" }
 
+# make a graph api call to find the UserPrincipalName from the email address.
+$URI = $('https://graph.microsoft.com/v1.0/users?$filter=mail eq '+"'"+$Request.Query.user+"'")
+
+$Results = Invoke-RestMethod -Headers $Headers -Method Get -Uri $URI
+
+if ($Results.value.userprincipalname) {
+    # If a upn was found, use that instead
+    Write-Output "$($Request.query.user) resolved to $($Results.value.userprincipalname)"
+    $Request.query.user = $Results.value.userprincipalname
+}
+
 if ($Request.query.user)
 {
     
