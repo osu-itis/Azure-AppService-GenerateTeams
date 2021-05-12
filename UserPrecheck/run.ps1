@@ -37,11 +37,11 @@ $token = Get-MsalToken -ClientId $env:ClientID -ClientSecret $(ConvertTo-SecureS
 # Setting the headers as a variable for convienience
 $Headers = @{Authorization = "Bearer $($token.AccessToken)" }
 
-if ($Request.Body.user)
+if ($Request.query.user)
 {
     
     # Setting the graph URI with the user to look up. 
-    $URI = "https://graph.microsoft.com/v1.0/users/$($request.Body.user)/licenseDetails"
+    $URI = "https://graph.microsoft.com/v1.0/users/$($Request.query.user)/licenseDetails"
     
     
     try {
@@ -50,7 +50,7 @@ if ($Request.Body.user)
     catch {
         $Results = $null
         
-        write-warning "Could not find a user with the value $($request.body.user)"
+        write-warning "Could not find a user with the value $($Request.query.user)"
     }
     
     if ($results.value.serviceplans -eq $null) {
@@ -58,12 +58,12 @@ if ($Request.Body.user)
         Push-OutputBinding -Name Response -Value (
             [HttpResponseContext]@{
                 StatusCode = [HttpStatusCode]::BadRequest
-                Body = "Could not find a user with the value $($request.body.user)."
+                Body = "Could not find a user with the value $($Request.query.user)."
             })
     }
     else {
         $tempBody = [PSCustomObject]@{
-            User = $Request.Body.user
+            User = $Request.query.user
             TeamsEnabled = $($results.value.servicePlans|Where-Object {$_.serviceplanname -like "*TEAMS*"}[0]|Select-Object -ExpandProperty provisioningStatus)
         }
         
@@ -82,7 +82,7 @@ if ($Request.Body.user)
             Push-OutputBinding -Name Response -Value (
                 [HttpResponseContext]@{
                     StatusCode = [HttpStatusCode]::BadRequest
-                    Body = "User with the value $($request.body.user) is not licenced for teams."
+                    Body = "User with the value $($Request.query.user) is not licenced for teams."
                 })
         }
     }
