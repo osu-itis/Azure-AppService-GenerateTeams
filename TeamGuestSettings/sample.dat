@@ -1,0 +1,6 @@
+{
+"TicketID": "01234567",
+"Requestor": "someuser@oregonstate.edu",
+"TeamName": "Some Team Name",
+"GuestSettingsEnabled": "true"
+}
