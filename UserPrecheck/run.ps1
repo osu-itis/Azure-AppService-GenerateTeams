@@ -22,6 +22,18 @@ $token = Get-MsalToken -ClientId $env:ClientID -ClientSecret $(ConvertTo-SecureS
 # Setting the headers as a variable for convienience
 $Headers = @{Authorization = "Bearer $($token.AccessToken)" }
 
+if (-not $Request.query.user) {
+    {
+        Write-Output "Responding with bad request, request was not correctly formatted"
+        Push-OutputBinding -Name Response -Value (
+            [HttpResponseContext]@{
+                StatusCode = [HttpStatusCode]::BadRequest
+                Body = "Request was not correctly formatted."
+            })
+    }
+    break
+}
+
 # make a graph api call to find the UserPrincipalName from the email address.
 $URI = $('https://graph.microsoft.com/v1.0/users?$filter=mail eq '+"'"+$Request.Query.user+"'")
 
