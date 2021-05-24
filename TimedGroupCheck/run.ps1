@@ -13,19 +13,10 @@ if ($Timer.IsPastDue) {
 Write-Host "PowerShell timer trigger function ran! TIME: $currentUTCtime"
 
 # Attempting to import the needed Modules
-try {
-    Write-Output "Importing the MSAL.PS module"
-    Import-Module .\Modules\MSAL.PS\4.21.0.1\MSAL.PS.psd1 -Force -ErrorAction stop
-}
-catch {
-    Throw 'Failed to import the MSAL.PS Module'
-}
+. .\Shared\Import-MSAL.ps1
 
-# Checking if the needed ENVs exist:
-if ([string]::IsNullOrEmpty($env:AzureWebJobsStorage)) { Throw 'Could not find $env:AzureWebJobsStorage' }
-if ([string]::IsNullOrEmpty($env:ClientID)) { Throw 'Could not find $env:ClientID' }
-if ([string]::IsNullOrEmpty($env:ClientSecret)) { Throw 'Could not find $env:ClientSecret' }
-if ([string]::IsNullOrEmpty($env:TenantId)) { Throw 'Could not find $env:TenantId' }
+# Checking if the needed ENVs exist
+. .\Shared\Check-ENVs.ps1
 
 # Using MSAL to generate and manage a (JWT) token
 Write-Output "Generating token"
