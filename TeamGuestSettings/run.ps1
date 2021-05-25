@@ -7,41 +7,14 @@ param($Request, $TriggerMetadata)
 Write-Host "PowerShell HTTP trigger function processed a request."
 
 # Attempting to import the needed Modules
-try
-{
-    Write-Output "Importing the MSAL.PS module"
-    Import-Module .\Modules\MSAL.PS\4.21.0.1\MSAL.PS.psd1 -Force -ErrorAction stop
-} catch
-{
-    Throw 'Failed to import the MSAL.PS Module'
-}
+import-module .\Modules\New-GraphAPIToken\New-GraphAPIToken.psm1
 
-# Checking if the needed ENVs exist:
-if ([string]::IsNullOrEmpty($env:AzureWebJobsStorage))
-{ Throw 'Could not find $env:AzureWebJobsStorage'
-}
-if ([string]::IsNullOrEmpty($env:ClientID))
-{ Throw 'Could not find $env:ClientID'
-}
-if ([string]::IsNullOrEmpty($env:ClientSecret))
-{ Throw 'Could not find $env:ClientSecret'
-}
-if ([string]::IsNullOrEmpty($env:TenantId))
-{ Throw 'Could not find $env:TenantId'
-}
+# Checking if the needed ENVs exist
+. .\Shared\Check-ENVs.ps1
 
-# Using MSAL to generate and manage a (JWT) token
-Write-Output "Generating token"
-$token = Get-MsalToken -ClientId $env:ClientID -ClientSecret $(ConvertTo-SecureString $env:ClientSecret -AsPlainText -Force) -TenantId $env:TenantID
-
-# Setting the headers as a variable for convienience
-$Headers = @{Authorization = "Bearer $($token.AccessToken)" }
-
-# Combinding into a custom object to be reused later
-$MSAL = [PSCustomObject]@{
-    Token = $token
-    Headers = $Headers
-}
+# Gathering a token and setting the headers
+$GraphAPIToken = New-GraphAPIToken -ClientID $env:ClientID -ClientSecret $env:ClientSecret -TenantID $env:TenantID
+$Headers = $GraphAPIToken.Headers
 
 # Defining functions
 function Get-TeamInfo {
@@ -62,11 +35,11 @@ function Get-TeamInfo {
 
     # Get team general info
     $URI = 'https://graph.microsoft.com/v1.0/groups?$filter=startswith(displayName,' + "'"+$TeamName+"')"
-    $Results = Invoke-RestMethod -Headers $MSAL.Headers -Method Get -Uri $URI
+    $Results = Invoke-RestMethod -Headers $Headers -Method Get -Uri $URI
     $TeamInfo = $Results.value|Select-Object ID,Mail,displayname
 
     # Get current team guest access setting
-    $results = Invoke-RestMethod -headers $MSAL.Headers -Method get -uri $(
+    $results = Invoke-RestMethod -headers $Headers -Method get -uri $(
         "https://graph.microsoft.com/v1.0/groups/"+$TeamInfo.id+"/settings"
     )
 
@@ -129,13 +102,13 @@ function Set-TeamInfo {
         try {
             #If posting fails, try patching the information since the setting already exists on the object
             Write-Output "Attempting patch to settings"
-            Invoke-RestMethod "https://graph.microsoft.com/v1.0/groups/$($func.GroupID)/settings/$($GroupSettingsInfo.value.id)" -Method 'patch' -Body $func.body -ContentType 'application/json'  -Headers $msal.Headers
+            Invoke-RestMethod "https://graph.microsoft.com/v1.0/groups/$($func.GroupID)/settings/$($GroupSettingsInfo.value.id)" -Method 'patch' -Body $func.body -ContentType 'application/json'  -Headers $Headers
         }
         catch {
             #Sometimes the resource is not available and needs to be tried again in a few moments
             start-sleep -Seconds 5
             Write-Output "Attempting patch to settings"
-            Invoke-RestMethod "https://graph.microsoft.com/v1.0/groups/$($func.GroupID)/settings/$($GroupSettingsInfo.value.id)" -Method 'patch' -Body $func.body -ContentType 'application/json'  -Headers $msal.Headers
+            Invoke-RestMethod "https://graph.microsoft.com/v1.0/groups/$($func.GroupID)/settings/$($GroupSettingsInfo.value.id)" -Method 'patch' -Body $func.body -ContentType 'application/json'  -Headers $Headers
         }
     }
 }
@@ -178,7 +151,7 @@ switch ($request.Method)
         Write-output "Gathering team info"
         $GuestSettings = get-teamInfo -teamName $RequestToProcess.TeamName
         Write-output "Setting team info"
-        Set-TeamInfo -Headers $MSAL.Headers -GroupID $GuestSettings.id -value $RequestToProcess.GuestSettingsEnabled
+        Set-TeamInfo -Headers $Headers -GroupID $GuestSettings.id -value $RequestToProcess.GuestSettingsEnabled
         Write-output "Gathering team info"
         $Body = get-teamInfo -teamName $RequestToProcess.TeamName
 
