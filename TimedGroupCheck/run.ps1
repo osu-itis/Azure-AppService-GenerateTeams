@@ -13,17 +13,14 @@ if ($Timer.IsPastDue) {
 Write-Host "PowerShell timer trigger function ran! TIME: $currentUTCtime"
 
 # Attempting to import the needed Modules
-. .\Shared\Import-MSAL.ps1
+import-module .\Modules\New-GraphAPIToken\New-GraphAPIToken.psm1
 
 # Checking if the needed ENVs exist
 . .\Shared\Check-ENVs.ps1
 
-# Using MSAL to generate and manage a (JWT) token
-Write-Output "Generating token"
-$token = Get-MsalToken -ClientId $env:ClientID -ClientSecret $(ConvertTo-SecureString $env:ClientSecret -AsPlainText -Force) -TenantId $env:TenantID
-
-# Setting the headers as a variable for convienience
-$Headers = @{Authorization = "Bearer $($token.AccessToken)" }
+# Gathering a token and setting the headers
+$GraphAPIToken = New-GraphAPIToken -ClientID $env:ClientID -ClientSecret $env:ClientSecret -TenantID $env:TenantID
+$Headers = $GraphAPIToken.Headers
 
 # Setting the Graph URI, We want to filter all unifed groups and then ensure that the output has both the ID and the ResourceProvisioningOptions
 $URI = "https://graph.microsoft.com/v1.0/groups?$filter=groupTypes/any(a:a eq 'unified')&$select=id,resourceProvisioningOptions"

@@ -19,17 +19,14 @@ else {
     Write-Output "User: $($Request.query.user)"
     
     # Attempting to import the needed Modules
-    . .\Shared\Import-MSAL.ps1
+    import-module .\Modules\New-GraphAPIToken\New-GraphAPIToken.psm1
     
     # Checking if the needed ENVs exist
     . .\Shared\Check-ENVs.ps1
-    
-    # Using MSAL to generate and manage a (JWT) token
-    Write-Output "Generating token"
-    $token = Get-MsalToken -ClientId $env:ClientID -ClientSecret $(ConvertTo-SecureString $env:ClientSecret -AsPlainText -Force) -TenantId $env:TenantID
-    
-    # Setting the headers as a variable for convienience
-    $Headers = @{Authorization = "Bearer $($token.AccessToken)" }
+
+    # Gathering a token and setting the headers
+    $GraphAPIToken = New-GraphAPIToken -ClientID $env:ClientID -ClientSecret $env:ClientSecret -TenantID $env:TenantID
+    $Headers = $GraphAPIToken.Headers
     
     # make a graph api call to find the UserPrincipalName from the email address.
     $URI = $('https://graph.microsoft.com/v1.0/users?$filter=mail eq '+"'"+$Request.Query.user+"'")
