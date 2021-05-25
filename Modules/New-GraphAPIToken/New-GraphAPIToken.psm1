@@ -62,7 +62,7 @@ function New-GraphAPIToken {
         [void]GenerateHeaders() {
             # Creating the headers in for format of 'Bearer <TOKEN>', this will be needed for all future requests
             $this.Headers = @{
-                Authorization = "$($this.OAuthReq.token_type) $($this.OAuthReq.access_token))"
+                Authorization = "$($this.OAuthReq.token_type) $($this.OAuthReq.access_token)"
             }
         }
         [void]GenerateTokenString() {
