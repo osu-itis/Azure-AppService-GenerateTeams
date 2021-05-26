@@ -22,8 +22,6 @@ $URI = 'https://graph.microsoft.com/beta/groups?$filter=resourceProvisioningOpti
 Write-Output "Gathering raw results"
 $Results = Invoke-RestMethod -Headers $Headers -Method Get -Uri $URI
 
-#$Results | Export-Clixml -path .\testing.cli.xml
-
 $Collection = @()
 
 do {
