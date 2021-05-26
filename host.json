@@ -11,5 +11,6 @@
     "logLevel": {
       "default": "Trace"
     }
-  }
+  },
+  "functionTimeout": "00:09:59"
 }

@@ -6,9 +6,6 @@ param($Request, $TriggerMetadata)
 # Write to the Azure Functions log stream.
 Write-Host "PowerShell HTTP trigger function processed a request."
 
-# Writing out to a file for testing
-$Request.body | Export-Clixml -Path .\GARBAGE.CLI.XML
-
 # Setting this to a new variable
 $RequestBody = $Request.body
 
@@ -24,8 +21,6 @@ $Exempt = $(
 
 # Attempting to import the needed Modules
 try {
-    Write-Output "Importing the MSAL.PS module"
-    Import-Module .\modules\MSAL.PS\4.21.0.1\MSAL.PS.psd1 -Force -ErrorAction stop
     Write-Output "Importing the 'CustomToolkit' module"
     Import-Module .\Modules\CustomToolkit\CustomToolkit.psm1 -Force -ErrorAction stop
 }

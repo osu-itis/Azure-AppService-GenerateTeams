@@ -34,8 +34,6 @@ This repository contains the code used for azure functions allowing a single Res
   - [Workflow and Usage](#workflow-and-usage)
   - [REST Examples](#rest-examples)
     - [Example Hostname](#example-hostname)
-    - [Request to generate a new team](#request-to-generate-a-new-team)
-      - [Example response](#example-response)
   - [Additional Notes](#additional-notes)
     - [Graph Settings](#graph-settings)
     - [Connect-ExchangeOnline](#connect-exchangeonline)
@@ -83,7 +81,7 @@ This repository contains the code used for azure functions allowing a single Res
 
 ### Required Modules
 
-The `MSAL.PS` module must be cached to `.\TimedGroupCheck\modules\MSAL.PS`, This is **not** a module that is available from Azure and is **not** committed to the repository. The TimedGroupCheck function will fail and throw an error without this module.
+No external modules are required.
 
 ### Hardcoded Script Values
 
@@ -150,38 +148,6 @@ The name is based off of whatever the Azure Function App Service name is:
 Port 7071 is currently the default port when using the local azure function apps for testing:
   Host: localhost:7071
 
-```
-
-### Request to generate a new team
-
-```HTTP REST
-POST /api/NewTeam?code=<AZUREFUNCTIONKEY> HTTP/1.1
-Host: <HOST>
-Content-Type: application/json
-
-{
-  "TeamDescription": "Generated through API call",
-  "TeamType": "Private+Team",
-  "TeamName": "Some Name",
-  "TicketID": "00000000",
-  "Requestor": "email.address@oregonstate.edu"
-}
-```
-
-#### Example response
-
-```JSON
-{
-  "ID": <GUID-of-new-Team>,
-  "Description": <Description of Team>,
-  "TicketID": "00000000",
-  "Status": "SUCCESS",
-  "rowKey": <Guid of entry in Azure Table Storage>,
-  "Visibility": "Private",
-  "Mail": "<Email.Address>@OregonStateUniversity.onmicrosoft.com",
-  "DisplayName": <Description>,
-  "partitionKey": "TeamsLog"
-}
 ```
 
 ## Additional Notes

@@ -3,10 +3,10 @@
 #
 @{
     # For latest supported version, go to 'https://www.powershellgallery.com/packages/Az'.
-    'Az'             = '4.*'
-    'MicrosoftTeams' = '1.*'
+    'Az'             = '5.*'
+    'MicrosoftTeams' = '2.*'
     'Az.Automation'  = '1.*'
-    'Az.Storage'     = '2.*'
-    'Az.Resources'   = '2.*'
+    'Az.Storage'     = '3.*'
+    'Az.Resources'   = '3.*'
     'AzTable'        = '2.*'
 }
