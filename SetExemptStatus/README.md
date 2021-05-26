@@ -6,7 +6,7 @@
 
 ## Requirements
 
-- This function requires the `MSAL.PS` module which is currently not part of microsoft's default modules that can be auto imported with the `requirements.psd1` file. Because of this, A copy needs to be manually added to `\modules\MSAL.PS\`.
+- No external requirements
 
 ## Use
 

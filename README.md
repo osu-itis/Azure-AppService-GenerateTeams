@@ -83,7 +83,7 @@ This repository contains the code used for azure functions allowing a single Res
 
 ### Required Modules
 
-The `MSAL.PS` module must be cached to `.\TimedGroupCheck\modules\MSAL.PS`, This is **not** a module that is available from Azure and is **not** committed to the repository. The TimedGroupCheck function will fail and throw an error without this module.
+No external modules are required.
 
 ### Hardcoded Script Values
 
