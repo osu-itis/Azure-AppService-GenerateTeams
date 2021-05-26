@@ -12,5 +12,5 @@
       "default": "Trace"
     }
   },
-  "functionTimeout": "00:10:10"
+  "functionTimeout": "00:10:00"
 }
