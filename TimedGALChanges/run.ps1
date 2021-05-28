@@ -67,7 +67,7 @@ if ($queue.CloudQueue.ApproximateMessageCount -gt 0) {
         Write-Host "Loaded Exchange Online"
     }
     else {
-        ThrowError "Failed to load Exchange Online"
+        Throw "Failed to load Exchange Online"
     }
 
     # Loop to run through all queue messages
