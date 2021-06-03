@@ -124,6 +124,8 @@ There are a few hardcoded values that are based on the configuration of the Azur
 
 ## Workflow and Usage
 
+- `UserPrecheck` Function is triggered via a get request
+  - Returns the queried user account and provides information regarding the user's licence status
 - `NewTeam` Function is triggered via a post request
   - A new O365 Group is generated and populated with a single member (the owner of the group)
   - The group is then used to create a Microsoft Team via Microsoft Graph
