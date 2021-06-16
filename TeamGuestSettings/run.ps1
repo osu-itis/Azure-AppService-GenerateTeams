@@ -23,7 +23,10 @@ Import-Module .\Modules\GraphGroupFunctions\GraphGroupFunctions.psm1
 # Determine if this is a get or a post, and gather the request to process.
 switch ($Request.Method) {
     'Get' {
+        # Setting the request to process
         $RequestToProcess = $Request.Query
+
+        # If a teamname was not provided, return badrequest
         if (-not $RequestToProcess.TeamName) {
             Write-Output "Sending bad request response"
             Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
@@ -53,7 +56,7 @@ switch ($Request.Method) {
                 StatusCode = [HttpStatusCode]::BadRequest
                 Body = $("Could not find group settings for $teamname")
             })
-            break            
+            break
         }
 
         $body = [PSCustomObject]@{
@@ -70,7 +73,10 @@ switch ($Request.Method) {
         })
     }
     'Post' {
+        # Setting the request to process
         $RequestToProcess = $Request.Body
+
+        #If a teamname was not provided, respond with badrequest
         if (-not $RequestToProcess.TeamName) {
             Write-Output "Sending bad request response"
             Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
@@ -80,6 +86,7 @@ switch ($Request.Method) {
             break
         }
 
+        #If a non-boolean value was provided, respond with badrequest
         if (($RequestToProcess.GuestSettingsEnabled -ne "true") -and ($RequestToProcess.GuestSettingsEnabled -ne "false")) {
             Write-Output "Sending bad request response"
             Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
@@ -88,7 +95,6 @@ switch ($Request.Method) {
             })
             break
         }
-
 
 
         Write-Output "Request: $($RequestToProcess|ConvertTo-Json)"
