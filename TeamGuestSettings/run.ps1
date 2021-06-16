@@ -43,8 +43,18 @@ switch ($Request.Method) {
         # Getting the graph group
         $Group = Get-GraphGroup -Headers $Headers -TeamName $TeamName
 
-        # Getting the graph group settings
-        $Settings = Get-GraphGroupGuestSettings -Headers $Headers -GroupID $group.id
+        try {
+            # Getting the graph group settings
+            $Settings = Get-GraphGroupGuestSettings -Headers $Headers -GroupID $group.id
+        }
+        catch {
+            Write-Output "Sending bad request response"
+            Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+                StatusCode = [HttpStatusCode]::BadRequest
+                Body = $("Could not find group settings for $teamname")
+            })
+            break            
+        }
 
         $body = [PSCustomObject]@{
             DisplayName = $group.displayName
@@ -69,6 +79,18 @@ switch ($Request.Method) {
             })
             break
         }
+
+        if (($RequestToProcess.GuestSettingsEnabled -ne "true") -and ($RequestToProcess.GuestSettingsEnabled -ne "false")) {
+            Write-Output "Sending bad request response"
+            Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+                StatusCode = [HttpStatusCode]::BadRequest
+                Body = $("Request not formatted properly")
+            })
+            break
+        }
+
+
+
         Write-Output "Request: $($RequestToProcess|ConvertTo-Json)"
         Write-Output "Processing request for ticket $($RequestToProcess.TicketID)"
         Write-output "Gathering team info"
@@ -81,9 +103,19 @@ switch ($Request.Method) {
         # Getting the graph group
         $Group = Get-GraphGroup -Headers $Headers -TeamName $TeamName
 
-        # Setting the graph group settings
-        Write-output "Setting team info"
-        $Settings = Set-GraphGroupGuestSettings -Headers $Headers -GroupUnifiedGuestTemplateID $GuestTemplate.id -GroupID $Group.id -AllowToAddGuests $RequestToProcess.GuestSettingsEnabled
+        try {
+            # Setting the graph group settings
+            Write-output "Setting team info"
+            $Settings = Set-GraphGroupGuestSettings -Headers $Headers -GroupUnifiedGuestTemplateID $GuestTemplate.id -GroupID $Group.id -AllowToAddGuests $RequestToProcess.GuestSettingsEnabled
+        }
+        catch {
+            Write-Output "Sending bad request response"
+            Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+                StatusCode = [HttpStatusCode]::BadRequest
+                Body = $("Could not find group settings for $teamname")
+            })
+            break
+        }
 
         $body = [PSCustomObject]@{
             DisplayName = $group.displayName
