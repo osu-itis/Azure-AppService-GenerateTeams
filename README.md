@@ -124,7 +124,7 @@ There are a few hardcoded values that are based on the configuration of the Azur
 
 ## Workflow and Usage
 
-![Workflow img](img\workflows.drawio.svg)
+![Workflow img](./img/workflows.drawio.svg)
 
 - `UserPrecheck` Function is triggered via a get request
   - Returns the queried user account and provides information regarding the user's licence status
