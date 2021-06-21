@@ -124,6 +124,8 @@ There are a few hardcoded values that are based on the configuration of the Azur
 
 ## Workflow and Usage
 
+![Workflow img](img\workflows.drawio.svg)
+
 - `UserPrecheck` Function is triggered via a get request
   - Returns the queried user account and provides information regarding the user's licence status
 - `NewTeam` Function is triggered via a post request
@@ -138,8 +140,15 @@ There are a few hardcoded values that are based on the configuration of the Azur
     - The function loads exchange, and attempts to set the visibility of the group in the GAL
       - If the function succeeds, the queue message is removed from the queue
       - If the function does not succeed, the queue message will be checked again the next time the function incrementally checks the queue
+- `TeamGuestSettings` Function is triggered via a get or post request
+  - Team guest access is either enabled or disabled, and returns the current setting values
+- `GetAllGuestEnabledTeams`
+  - Generates a list of all teams that currently allow guest access
+  - supplemental function used as needed, is manually triggered
 
 ## REST Examples
+
+View the readme file within each function's respective folder for more information.
 
 ### Example Hostname
 
