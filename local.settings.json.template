@@ -11,8 +11,6 @@
     "ServiceAccountPassword": "",
     "AzureWebJobs.NewTeam.Disabled": "false",
     "AzureWebJobs.TimedGalChanges.Disabled": "false",
-    "AzureWebJobs.SetExemptionStatus.Disabled": "false",
-    "AzureWebJobs.TimedGroupCheck.Disabled": "false"
   },
   "ConnectionStrings": {}
 }
