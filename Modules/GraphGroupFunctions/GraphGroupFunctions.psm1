@@ -48,13 +48,37 @@ function Get-GraphGroup {
         [parameter(Mandatory=$true)]$TeamName
         )
         
-    # Finding the group that matches the team name, filtering to ensure that we only have one match and then getting the group id, wich will be used for all future graph calls
-    $Results = Invoke-RestMethod -Headers $Headers -Method Get -Uri $('https://graph.microsoft.com/v1.0/groups?$filter=startswith(displayName,' + "'"+$TeamName+"')")
-    $GroupID = $Results.value |Where-Object {$_.displayName -eq $TeamName}|Select-Object -ExpandProperty ID 
-    
-    # Getting the group
-    $Group = Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/groups/$GroupID" -Method "get" -Headers $Headers
-    return $Group
+    # Finding the group that matches the team name, filtering to ensure that we only have one match and then getting the group id, wich will be used for all future graph calls, if the filter fails (due to special characters, fall back to checking through all groups)
+    try {
+        $Results = Invoke-RestMethod -Headers $Headers -Method Get -Uri $('https://graph.microsoft.com/v1.0/groups?$filter=startswith(displayName,' + "'"+$TeamName+"')")
+        $GroupID = $Results.value |Where-Object {$_.displayName -eq $TeamName}|Select-Object -ExpandProperty ID
+    }
+    catch {
+        # Setting an empty array for the values
+        $values = @()
+        # Grabbing the first 100 groups and the next link
+        $temp = Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/groups" -method Get -Headers $Headers
+
+        # Adding the current teams to the list
+        $values += $temp.value|Where-Object {$_.resourceProvisioningOptions -like "Team"}
+        
+        # Search through the groups until there are no more nextlinks
+        do {
+            # Getting the next set of results
+            $temp = Invoke-RestMethod -Uri $temp.'@odata.nextLink' -Method Get -Headers $Headers
+            # Adding the teams to the list of values
+            $values += $temp.value|Where-Object {$_.resourceProvisioningOptions -like "Team"}
+        } until (-not $temp.'@odata.nextLink')
+
+        # Getting the group ID
+        $GroupID = $values |Where-Object {$_.displayName -eq $TeamName}|Select-Object -ExpandProperty ID
+    }
+
+    if ($GroupID) {
+        # Getting the group
+        $Group = Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/groups/$GroupID" -Method "get" -Headers $Headers
+        return $Group
+    }
 }
 
 function Get-GraphGroupGuestSettings {
