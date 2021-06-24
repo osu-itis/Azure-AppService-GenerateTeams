@@ -37,8 +37,8 @@ switch ($Request.Method) {
         }
         Write-output "Gathering team info"
 
-        # Getting the name of the group to find
-        $TeamName = $RequestToProcess.TeamName
+        # Getting the name of the group to find and resolving any unicode excape characters
+        $TeamName = [System.Text.RegularExpressions.Regex]::Unescape($RequestToProcess.TeamName)
 
         # Getting the template
         $GuestTemplate = Get-GraphGroupGuestTemplate -Headers $Headers
@@ -100,8 +100,9 @@ switch ($Request.Method) {
         Write-Output "Request: $($RequestToProcess|ConvertTo-Json)"
         Write-Output "Processing request for ticket $($RequestToProcess.TicketID)"
         Write-output "Gathering team info"
-        # Getting the name of the group to find
-        $TeamName = $RequestToProcess.TeamName
+        
+        # Getting the name of the group to find and resolving any unicode excape characters
+        $TeamName = [System.Text.RegularExpressions.Regex]::Unescape($RequestToProcess.TeamName)
 
         # Getting the template
         $GuestTemplate = Get-GraphGroupGuestTemplate -Headers $Headers
