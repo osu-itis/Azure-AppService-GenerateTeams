@@ -51,7 +51,7 @@ function Get-GraphGroup {
     # Finding the group that matches the team name, filtering to ensure that we only have one match and then getting the group id, wich will be used for all future graph calls, if the filter fails (due to special characters, fall back to checking through all groups)
     try {
         $Results = Invoke-RestMethod -Headers $Headers -Method Get -Uri $('https://graph.microsoft.com/v1.0/groups?$filter=startswith(displayName,' + "'"+$TeamName+"')")
-        $GroupID = $Results.value |Where-Object {$_.displayName -eq $TeamName}|Select-Object -ExpandProperty ID
+        $GroupID = $Results.value |Where-Object {($_.displayName -eq $TeamName)-and($_.resourceProvisioningOptions -like "Team")}|Select-Object -ExpandProperty ID
     }
     catch {
         # Setting an empty array for the values
@@ -72,6 +72,10 @@ function Get-GraphGroup {
 
         # Getting the group ID
         $GroupID = $values |Where-Object {$_.displayName -eq $TeamName}|Select-Object -ExpandProperty ID
+    }
+
+    if ($GroupID.count -gt 1) {
+        Write-Error -Message "More than one team was found, cannot return one result."
     }
 
     if ($GroupID) {
