@@ -39,6 +39,10 @@ This repository contains the code used for azure functions allowing a single Res
     - [Connect-ExchangeOnline](#connect-exchangeonline)
     - [Team Discovery Settings](#team-discovery-settings)
       - [Current user based Options for Teams Membership](#current-user-based-options-for-teams-membership)
+  - [Troubleshooting](#troubleshooting)
+    - [Troubleshooting in TDx](#troubleshooting-in-tdx)
+    - [Troubleshooting in Azure](#troubleshooting-in-azure)
+  - [Manually change guest access settings using Microsoft PowerShell](#manually-change-guest-access-settings-using-microsoft-powershell)
 
 ## Requirements
 
@@ -188,3 +192,33 @@ Additional comments regarding Graph, Powershell, Teams Roadmaps, ect...
 
 - Options for private teams to allow new members to join directly without approval
   - [Create and share a code](https://support.microsoft.com/en-us/office/create-a-link-or-a-code-for-joining-a-team-11b0de3b-9288-4cb4-bc49-795e7028296f)
+
+## Troubleshooting
+
+### Troubleshooting in TDx
+
+- Open the [TDx homepage](https://oregonstate.teamdynamix.com/TDNext/Home/Desktop/Default.aspx)
+- Click on the orange grid icon in the top left corner
+- Click the admin icon, this will open the TDx Admin interface
+- click "Applications"
+- Choose "IT"
+- Click "workflow web services >"
+- Choose "workflow web service logs"
+- Look through the list and choose the failed/unsuccessful entry
+- This shows the associated ticket, verify that this log matches the ticket number
+- Review the contents of the log for the exact error message
+
+### Troubleshooting in Azure
+
+- Open the [Azure Portal](https://portal.azure.com/#home)
+- Search for "resource groups"
+- Open the resource group "Infra-TeamsAutomation"
+- Open the "TeamsCreate" function app
+- in the left hand pane, click on functions
+- Select the function to troubleshoot
+- Click "Monitor"
+- Review the individual invocations and the logs as needed
+
+## Manually change guest access settings using Microsoft PowerShell
+
+Review Microsoft's solution to [Change guest access settings using Microsoft PowerShell.](https://docs.microsoft.com/en-us/microsoft-365/solutions/per-group-guest-access?view=o365-worldwide)
